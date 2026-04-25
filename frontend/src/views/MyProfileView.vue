@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ArrowUp, ArrowDown, Heart } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useHugsStore, type UserProfile } from '@/stores/hugs'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
 import RankBadge from '@/components/RankBadge.vue'
 
 const auth = useAuthStore()
@@ -23,8 +28,7 @@ onMounted(async () => {
 })
 
 function formatDate(dateStr: string): string {
-  const d = new Date(dateStr)
-  return d.toLocaleString('ru-RU', {
+  return new Date(dateStr).toLocaleString('ru-RU', {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -34,67 +38,103 @@ function formatDate(dateStr: string): string {
 </script>
 
 <template>
-  <div class="max-w-3xl mx-auto">
-    <h1 class="text-2xl font-bold mb-6">👤 Мой профиль</h1>
+  <div class="mx-auto max-w-2xl space-y-6">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Мой профиль</h1>
+      <p class="text-muted-foreground">Ваша статистика и история объятий</p>
+    </div>
 
-    <div v-if="loading" class="text-center py-8 text-indigo-400">Загрузка...</div>
-
-    <div v-else-if="profile" class="space-y-6">
-      <!-- Profile card -->
-      <div class="card">
-        <div class="flex items-center gap-6">
-          <div class="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-3xl font-bold">
-            {{ profile.username[0]?.toUpperCase() }}
-          </div>
-          <div>
-            <h2 class="text-2xl font-bold">{{ profile.username }}</h2>
-            <div class="flex items-center gap-3 mt-2">
-              <RankBadge :rank="profile.rank" size="lg" />
-            </div>
-          </div>
-        </div>
+    <div v-if="loading" class="space-y-4">
+      <Skeleton class="h-28 w-full rounded-lg" />
+      <div class="grid grid-cols-3 gap-4">
+        <Skeleton class="h-20 rounded-lg" />
+        <Skeleton class="h-20 rounded-lg" />
+        <Skeleton class="h-20 rounded-lg" />
       </div>
+    </div>
+
+    <template v-else-if="profile">
+      <!-- Profile card -->
+      <Card>
+        <CardContent class="flex items-center gap-5 pt-6">
+          <Avatar class="size-16">
+            <AvatarFallback class="text-lg">
+              {{ profile.username.slice(0, 2).toUpperCase() }}
+            </AvatarFallback>
+          </Avatar>
+          <div class="space-y-1.5">
+            <h2 class="text-xl font-semibold">{{ profile.username }}</h2>
+            <RankBadge :rank="profile.rank" />
+          </div>
+        </CardContent>
+      </Card>
 
       <!-- Stats -->
       <div class="grid grid-cols-3 gap-4">
-        <div class="card text-center">
-          <p class="text-2xl font-bold text-primary-light">{{ profile.total_hugs }}</p>
-          <p class="text-xs text-indigo-400 mt-1">Всего</p>
-        </div>
-        <div class="card text-center">
-          <p class="text-2xl font-bold text-pink-400">{{ profile.hugs_given }}</p>
-          <p class="text-xs text-indigo-400 mt-1">Отправлено</p>
-        </div>
-        <div class="card text-center">
-          <p class="text-2xl font-bold text-green-400">{{ profile.hugs_received }}</p>
-          <p class="text-xs text-indigo-400 mt-1">Получено</p>
-        </div>
+        <Card>
+          <CardHeader class="flex flex-row items-center justify-between pb-2">
+            <CardDescription>Всего</CardDescription>
+            <Heart class="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-bold">{{ profile.total_hugs }}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader class="flex flex-row items-center justify-between pb-2">
+            <CardDescription>Отправлено</CardDescription>
+            <ArrowUp class="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-bold">{{ profile.hugs_given }}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader class="flex flex-row items-center justify-between pb-2">
+            <CardDescription>Получено</CardDescription>
+            <ArrowDown class="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-bold">{{ profile.hugs_received }}</div>
+          </CardContent>
+        </Card>
       </div>
 
-      <!-- Hug history -->
-      <div class="card">
-        <h3 class="font-semibold mb-4">📜 История объятий</h3>
-        <div v-if="history.length === 0" class="text-indigo-400 text-sm">
-          Пока нет объятий. Найдите кого-нибудь и обнимите!
-        </div>
-        <div v-else class="space-y-2 max-h-96 overflow-y-auto">
-          <div
-            v-for="hug in history"
-            :key="hug.id"
-            class="flex items-center justify-between py-2 px-3 rounded-lg bg-surface-light/50"
-          >
-            <div class="flex items-center gap-2">
-              <span v-if="hug.giver_id === auth.user?.id">🤗→</span>
-              <span v-else>←🤗</span>
-              <span class="text-sm">
-                <span v-if="hug.giver_id === auth.user?.id" class="text-pink-400">Вы обняли</span>
-                <span v-else class="text-green-400">Вас обнял(а)</span>
-              </span>
-            </div>
-            <span class="text-xs text-indigo-400">{{ formatDate(hug.created_at) }}</span>
+      <!-- History -->
+      <Card>
+        <CardHeader>
+          <CardTitle class="text-base">История объятий</CardTitle>
+          <CardDescription>Последние объятия</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div v-if="history.length === 0" class="py-6 text-center text-sm text-muted-foreground">
+            Пока нет объятий
           </div>
-        </div>
-      </div>
-    </div>
+          <div v-else class="space-y-1 max-h-96 overflow-y-auto">
+            <div
+              v-for="(hug, i) in history"
+              :key="hug.id"
+            >
+              <Separator v-if="i > 0" class="my-1" />
+              <div class="flex items-center justify-between py-2">
+                <div class="flex items-center gap-2 text-sm">
+                  <ArrowUp v-if="hug.giver_id === auth.user?.id" class="size-3.5 text-muted-foreground" />
+                  <ArrowDown v-else class="size-3.5 text-muted-foreground" />
+                  <span v-if="hug.giver_id === auth.user?.id" class="text-muted-foreground">
+                    Вы отправили объятие
+                  </span>
+                  <span v-else class="text-muted-foreground">
+                    Вам отправили объятие
+                  </span>
+                </div>
+                <span class="text-xs text-muted-foreground tabular-nums">
+                  {{ formatDate(hug.created_at) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </template>
   </div>
 </template>

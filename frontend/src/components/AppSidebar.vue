@@ -1,37 +1,70 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'
+import {
+  LayoutDashboard,
+  Users,
+  Newspaper,
+  Trophy,
+  UserCircle,
+  Heart,
+} from 'lucide-vue-next'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+} from '@/components/ui/sidebar'
 
 const route = useRoute()
 
-const links = [
-  { to: '/dashboard', label: 'Главная', icon: '🏠' },
-  { to: '/users', label: 'Пользователи', icon: '👥' },
-  { to: '/feed', label: 'Лента', icon: '📢' },
-  { to: '/leaderboard', label: 'Рейтинг', icon: '🏆' },
-  { to: '/profile', label: 'Мой профиль', icon: '👤' },
+const items = [
+  { title: 'Главная', url: '/dashboard', icon: LayoutDashboard },
+  { title: 'Пользователи', url: '/users', icon: Users },
+  { title: 'Лента', url: '/feed', icon: Newspaper },
+  { title: 'Рейтинг', url: '/leaderboard', icon: Trophy },
+  { title: 'Мой профиль', url: '/profile', icon: UserCircle },
 ]
 
 const currentPath = computed(() => route.path)
 </script>
 
 <template>
-  <aside class="fixed left-0 top-16 bottom-0 w-64 bg-surface border-r border-indigo-800/30 p-4">
-    <nav class="space-y-2 mt-4">
-      <RouterLink
-        v-for="link in links"
-        :key="link.to"
-        :to="link.to"
-        :class="[
-          'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
-          currentPath === link.to || currentPath.startsWith(link.to + '/')
-            ? 'bg-primary/20 text-primary-light border border-primary/30'
-            : 'text-indigo-300 hover:bg-surface-light hover:text-white',
-        ]"
-      >
-        <span class="text-lg">{{ link.icon }}</span>
-        <span class="font-medium">{{ link.label }}</span>
-      </RouterLink>
-    </nav>
-  </aside>
+  <Sidebar collapsible="icon">
+    <SidebarHeader class="p-4">
+      <div class="flex items-center gap-2 overflow-hidden">
+        <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <Heart class="size-4" />
+        </div>
+        <span class="truncate font-semibold">Hugs</span>
+      </div>
+    </SidebarHeader>
+    <SidebarContent>
+      <SidebarGroup>
+        <SidebarGroupLabel>Навигация</SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem v-for="item in items" :key="item.title">
+              <SidebarMenuButton
+                as-child
+                :is-active="currentPath === item.url || currentPath.startsWith(item.url + '/')"
+              >
+                <RouterLink :to="item.url">
+                  <component :is="item.icon" />
+                  <span>{{ item.title }}</span>
+                </RouterLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    </SidebarContent>
+    <SidebarRail />
+  </Sidebar>
 </template>

@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { ArrowUp, ArrowDown, Heart, Coins, Clock, ArrowUpCircle } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 import { useHugsStore, type UserProfile, type CooldownInfo } from '@/stores/hugs'
 import { useAuthStore } from '@/stores/auth'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
 import HugButton from '@/components/HugButton.vue'
 import RankBadge from '@/components/RankBadge.vue'
 
@@ -37,85 +44,117 @@ async function upgrade() {
   upgrading.value = true
   try {
     cooldown.value = await hugsStore.upgradeCooldown(userId.value)
+    toast.success('Кулдаун уменьшен!')
   } catch (e: any) {
-    alert(e.response?.data?.message || 'Недостаточно монет')
+    toast.error(e.response?.data?.message || 'Недостаточно монет')
   } finally {
     upgrading.value = false
   }
 }
 
 async function onHugged() {
-  // Reload profile to update stats
   profile.value = await hugsStore.getUserProfile(userId.value)
+  cooldown.value = await hugsStore.getCooldown(userId.value)
 }
 
 onMounted(load)
 </script>
 
 <template>
-  <div class="max-w-2xl mx-auto">
-    <div v-if="loading" class="text-center py-12 text-indigo-400">Загрузка...</div>
-    <div v-else-if="error" class="text-center py-12 text-red-400">{{ error }}</div>
-    <div v-else-if="profile" class="space-y-6">
+  <div class="mx-auto max-w-2xl space-y-6">
+    <div v-if="loading" class="space-y-4">
+      <Skeleton class="h-32 w-full rounded-lg" />
+      <div class="grid grid-cols-3 gap-4">
+        <Skeleton class="h-20 rounded-lg" />
+        <Skeleton class="h-20 rounded-lg" />
+        <Skeleton class="h-20 rounded-lg" />
+      </div>
+    </div>
+
+    <div v-else-if="error" class="py-12 text-center text-muted-foreground">{{ error }}</div>
+
+    <template v-else-if="profile">
       <!-- Profile header -->
-      <div class="card">
-        <div class="flex items-center gap-6">
-          <div class="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-3xl font-bold shrink-0">
-            {{ profile.username[0]?.toUpperCase() }}
-          </div>
-          <div class="flex-1">
-            <h1 class="text-2xl font-bold">{{ profile.username }}</h1>
-            <div class="flex items-center gap-3 mt-2">
+      <Card>
+        <CardContent class="flex items-center gap-5 pt-6">
+          <Avatar class="size-16">
+            <AvatarFallback class="text-lg">
+              {{ profile.username.slice(0, 2).toUpperCase() }}
+            </AvatarFallback>
+          </Avatar>
+          <div class="flex-1 space-y-1.5">
+            <h1 class="text-xl font-semibold">{{ profile.username }}</h1>
+            <div class="flex items-center gap-2">
               <RankBadge :rank="profile.rank" />
-              <span class="text-sm text-indigo-400">
+              <span class="text-xs text-muted-foreground">
                 {{ profile.role === 'admin' ? 'Администратор' : 'Пользователь' }}
               </span>
             </div>
           </div>
-          <HugButton v-if="!isMe" :userId="userId" @hugged="onHugged" />
-        </div>
-      </div>
+          <HugButton v-if="!isMe" :userId="userId" size="lg" @hugged="onHugged" />
+        </CardContent>
+      </Card>
 
       <!-- Stats -->
       <div class="grid grid-cols-3 gap-4">
-        <div class="card text-center">
-          <p class="text-2xl font-bold text-primary-light">{{ profile.total_hugs }}</p>
-          <p class="text-xs text-indigo-400 mt-1">Всего</p>
-        </div>
-        <div class="card text-center">
-          <p class="text-2xl font-bold text-pink-400">{{ profile.hugs_given }}</p>
-          <p class="text-xs text-indigo-400 mt-1">Отправлено</p>
-        </div>
-        <div class="card text-center">
-          <p class="text-2xl font-bold text-green-400">{{ profile.hugs_received }}</p>
-          <p class="text-xs text-indigo-400 mt-1">Получено</p>
-        </div>
+        <Card>
+          <CardHeader class="flex flex-row items-center justify-between pb-2">
+            <CardDescription>Всего</CardDescription>
+            <Heart class="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-bold">{{ profile.total_hugs }}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader class="flex flex-row items-center justify-between pb-2">
+            <CardDescription>Отправлено</CardDescription>
+            <ArrowUp class="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-bold">{{ profile.hugs_given }}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader class="flex flex-row items-center justify-between pb-2">
+            <CardDescription>Получено</CardDescription>
+            <ArrowDown class="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div class="text-2xl font-bold">{{ profile.hugs_received }}</div>
+          </CardContent>
+        </Card>
       </div>
 
-      <!-- Cooldown upgrade (only for other users) -->
-      <div v-if="!isMe && cooldown" class="card">
-        <h3 class="font-semibold mb-3">⏱️ Кулдаун для этого пользователя</h3>
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm text-indigo-400">
-              Текущий кулдаун: <span class="text-white font-semibold">{{ Math.floor(cooldown.cooldown_seconds / 60) }} мин.</span>
+      <!-- Cooldown upgrade -->
+      <Card v-if="!isMe && cooldown">
+        <CardHeader>
+          <CardTitle class="flex items-center gap-2 text-base">
+            <Clock class="size-4" />
+            Кулдаун
+          </CardTitle>
+          <CardDescription>
+            Текущий кулдаун: {{ Math.floor(cooldown.cooldown_seconds / 60) }} мин.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div class="flex items-center justify-between">
+            <p class="text-sm text-muted-foreground">
+              <Coins class="inline size-3.5 mr-1" />
+              5 монет = -10 мин. (минимум 5 мин.)
             </p>
-            <p class="text-xs text-indigo-500 mt-1">
-              Стоимость улучшения: 5 монет (-10 мин., мин. 5 мин.)
-            </p>
+            <Button
+              @click="upgrade"
+              :disabled="upgrading || cooldown.cooldown_seconds <= 300"
+              variant="outline"
+              size="sm"
+            >
+              <ArrowUpCircle class="size-4" />
+              {{ cooldown.cooldown_seconds <= 300 ? 'Максимум' : 'Улучшить' }}
+            </Button>
           </div>
-          <button
-            @click="upgrade"
-            :disabled="upgrading || cooldown.cooldown_seconds <= 300"
-            :class="[
-              'btn-primary text-sm',
-              cooldown.cooldown_seconds <= 300 ? 'opacity-50 cursor-not-allowed' : '',
-            ]"
-          >
-            {{ upgrading ? '...' : cooldown.cooldown_seconds <= 300 ? 'Макс.' : '⬆️ Улучшить' }}
-          </button>
-        </div>
-      </div>
-    </div>
+        </CardContent>
+      </Card>
+    </template>
   </div>
 </template>

@@ -1,6 +1,18 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { Heart } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 
 const auth = useAuthStore()
 const username = ref('')
@@ -18,60 +30,53 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-background">
-    <div class="w-full max-w-md">
-      <div class="text-center mb-8">
-        <span class="text-6xl">🤗</span>
-        <h1 class="text-3xl font-bold mt-4 bg-gradient-to-r from-primary-light to-accent bg-clip-text text-transparent">
-          Hugs as a Service
-        </h1>
-        <p class="text-indigo-400 mt-2">Платформа для объятий</p>
-      </div>
-
-      <div class="card">
-        <h2 class="text-xl font-bold mb-6 text-center">Вход</h2>
-
-        <form @submit.prevent="handleLogin" class="space-y-4">
-          <div>
-            <label class="block text-sm text-indigo-300 mb-1">Имя пользователя</label>
-            <input
+  <div class="flex min-h-screen items-center justify-center bg-background p-4">
+    <Card class="w-full max-w-sm">
+      <CardHeader class="text-center">
+        <div class="mx-auto mb-2 flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <Heart class="size-5" />
+        </div>
+        <CardTitle class="text-xl">Вход</CardTitle>
+        <CardDescription>Войдите в свой аккаунт Hugs as a Service</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form @submit.prevent="handleLogin" class="grid gap-4">
+          <div class="grid gap-2">
+            <Label for="username">Имя пользователя</Label>
+            <Input
+              id="username"
               v-model="username"
               type="text"
-              class="input-field"
-              placeholder="Введите имя пользователя"
+              placeholder="username"
               required
             />
           </div>
-
-          <div>
-            <label class="block text-sm text-indigo-300 mb-1">Пароль</label>
-            <input
+          <div class="grid gap-2">
+            <Label for="password">Пароль</Label>
+            <Input
+              id="password"
               v-model="password"
               type="password"
-              class="input-field"
-              placeholder="Введите пароль"
+              placeholder="********"
               required
             />
           </div>
-
-          <div v-if="errorMsg" class="text-red-400 text-sm text-center bg-red-900/20 rounded-lg p-2">
+          <p v-if="errorMsg" class="text-sm text-destructive text-center">
             {{ errorMsg }}
-          </div>
-
-          <button
-            type="submit"
-            :disabled="auth.loading"
-            class="btn-primary w-full"
-          >
-            {{ auth.loading ? 'Загрузка...' : 'Войти' }}
-          </button>
+          </p>
+          <Button type="submit" class="w-full" :disabled="auth.loading">
+            {{ auth.loading ? 'Вход...' : 'Войти' }}
+          </Button>
         </form>
-
-        <p class="text-center text-sm text-indigo-400 mt-4">
+      </CardContent>
+      <CardFooter class="justify-center">
+        <p class="text-sm text-muted-foreground">
           Нет аккаунта?
-          <RouterLink to="/register" class="text-primary-light hover:underline">Зарегистрироваться</RouterLink>
+          <RouterLink to="/register" class="text-foreground underline underline-offset-4 hover:text-primary">
+            Зарегистрироваться
+          </RouterLink>
         </p>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   </div>
 </template>

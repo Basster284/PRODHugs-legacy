@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
+import { Search } from 'lucide-vue-next'
 import { useHugsStore } from '@/stores/hugs'
+import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 import UserCard from '@/components/UserCard.vue'
 
 const hugsStore = useHugsStore()
@@ -27,27 +30,31 @@ onMounted(search)
 </script>
 
 <template>
-  <div class="max-w-3xl mx-auto">
-    <h1 class="text-2xl font-bold mb-6">👥 Пользователи</h1>
+  <div class="mx-auto max-w-2xl space-y-6">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Пользователи</h1>
+      <p class="text-muted-foreground">Найдите пользователя и отправьте объятие</p>
+    </div>
 
-    <div class="mb-6">
-      <input
+    <div class="relative">
+      <Search class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Input
         v-model="query"
         type="text"
-        class="input-field"
-        placeholder="🔍 Поиск по имени..."
+        class="pl-9"
+        placeholder="Поиск по имени..."
       />
     </div>
 
-    <div v-if="loading" class="text-center text-indigo-400 py-8">
-      Загрузка...
+    <div v-if="loading" class="space-y-3">
+      <Skeleton v-for="i in 5" :key="i" class="h-16 w-full rounded-lg" />
     </div>
 
-    <div v-else-if="users.length === 0" class="text-center text-indigo-400 py-8">
+    <div v-else-if="users.length === 0" class="py-12 text-center text-muted-foreground">
       Пользователи не найдены
     </div>
 
-    <div v-else class="space-y-3">
+    <div v-else class="space-y-2">
       <UserCard v-for="user in users" :key="user.id" :user="user" />
     </div>
   </div>

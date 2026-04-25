@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useHugsStore } from '@/stores/hugs'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import RankBadge from '@/components/RankBadge.vue'
 
 const hugsStore = useHugsStore()
@@ -11,49 +21,67 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="max-w-3xl mx-auto">
-    <h1 class="text-2xl font-bold mb-6">🏆 Рейтинг</h1>
-
-    <div v-if="hugsStore.loading" class="text-center py-8 text-indigo-400">Загрузка...</div>
-
-    <div v-else-if="hugsStore.leaderboard.length === 0" class="text-center py-8 text-indigo-400">
-      Пока нет данных. Будьте первыми!
+  <div class="mx-auto max-w-3xl space-y-6">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Рейтинг</h1>
+      <p class="text-muted-foreground">Топ пользователей по количеству объятий</p>
     </div>
 
-    <div v-else class="space-y-3">
-      <RouterLink
-        v-for="(entry, index) in hugsStore.leaderboard"
-        :key="entry.user_id"
-        :to="`/user/${entry.user_id}`"
-        class="card flex items-center gap-4 hover:border-primary/50 transition-all"
-      >
-        <div
-          :class="[
-            'w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shrink-0',
-            index === 0 ? 'bg-amber-500/20 text-amber-400' :
-            index === 1 ? 'bg-gray-400/20 text-gray-300' :
-            index === 2 ? 'bg-orange-500/20 text-orange-400' :
-            'bg-surface-light text-indigo-400',
-          ]"
-        >
-          <span v-if="index === 0">🥇</span>
-          <span v-else-if="index === 1">🥈</span>
-          <span v-else-if="index === 2">🥉</span>
-          <span v-else>{{ index + 1 }}</span>
-        </div>
+    <div v-if="hugsStore.loading" class="space-y-3">
+      <Skeleton v-for="i in 10" :key="i" class="h-12 w-full" />
+    </div>
 
-        <div class="flex-1 min-w-0">
-          <p class="font-semibold truncate">{{ entry.username }}</p>
-          <RankBadge :rank="entry.rank" size="sm" />
-        </div>
+    <div v-else-if="hugsStore.leaderboard.length === 0" class="py-12 text-center text-muted-foreground">
+      Пока нет данных
+    </div>
 
-        <div class="text-right shrink-0">
-          <p class="text-lg font-bold text-primary-light">{{ entry.total_hugs }}</p>
-          <p class="text-xs text-indigo-400">
-            ↑{{ entry.hugs_given }} ↓{{ entry.hugs_received }}
-          </p>
-        </div>
-      </RouterLink>
+    <div v-else class="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead class="w-12">#</TableHead>
+            <TableHead>Пользователь</TableHead>
+            <TableHead>Ранг</TableHead>
+            <TableHead class="text-right">Всего</TableHead>
+            <TableHead class="text-right">Отправлено</TableHead>
+            <TableHead class="text-right">Получено</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow
+            v-for="(entry, index) in hugsStore.leaderboard"
+            :key="entry.user_id"
+            class="cursor-pointer"
+            @click="$router.push(`/user/${entry.user_id}`)"
+          >
+            <TableCell class="font-medium tabular-nums">
+              {{ index + 1 }}
+            </TableCell>
+            <TableCell>
+              <div class="flex items-center gap-2">
+                <Avatar class="size-7">
+                  <AvatarFallback class="text-[10px]">
+                    {{ entry.username.slice(0, 2).toUpperCase() }}
+                  </AvatarFallback>
+                </Avatar>
+                <span class="font-medium">{{ entry.username }}</span>
+              </div>
+            </TableCell>
+            <TableCell>
+              <RankBadge :rank="entry.rank" />
+            </TableCell>
+            <TableCell class="text-right font-bold tabular-nums">
+              {{ entry.total_hugs }}
+            </TableCell>
+            <TableCell class="text-right tabular-nums text-muted-foreground">
+              {{ entry.hugs_given }}
+            </TableCell>
+            <TableCell class="text-right tabular-nums text-muted-foreground">
+              {{ entry.hugs_received }}
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
   </div>
 </template>

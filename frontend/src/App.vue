@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { RouterView, useRoute } from 'vue-router'
-import AppHeader from '@/components/AppHeader.vue'
-import AppSidebar from '@/components/AppSidebar.vue'
-import { useAuthStore } from '@/stores/auth'
 import { computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
+import { Separator } from '@/components/ui/separator'
+import { Toaster } from '@/components/ui/sonner'
+import AppSidebar from '@/components/AppSidebar.vue'
+import AppHeader from '@/components/AppHeader.vue'
 
 const auth = useAuthStore()
 const route = useRoute()
@@ -14,18 +17,23 @@ const showLayout = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background">
-    <template v-if="showLayout">
-      <AppHeader />
-      <div class="flex">
-        <AppSidebar />
-        <main class="flex-1 p-6 ml-64 mt-16">
+  <template v-if="showLayout">
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header class="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger class="-ml-1" />
+          <Separator orientation="vertical" class="mr-2 !h-4" />
+          <AppHeader />
+        </header>
+        <main class="flex-1 p-6">
           <RouterView />
         </main>
-      </div>
-    </template>
-    <template v-else>
-      <RouterView />
-    </template>
-  </div>
+      </SidebarInset>
+    </SidebarProvider>
+  </template>
+  <template v-else>
+    <RouterView />
+  </template>
+  <Toaster />
 </template>
