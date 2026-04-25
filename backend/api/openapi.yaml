@@ -249,8 +249,18 @@ paths:
                 - username
                 - password
               properties:
-                username: { type: string }
-                password: { type: string }
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 32
+                  pattern: '^[a-zA-Z][a-zA-Z0-9_]*$'
+                  description: 'Username must be 3-32 characters, start with a letter, and contain only letters, numbers, and underscores'
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 128
+                  description: 'Password must be 8-128 characters, contain at least one letter, one digit, and one special character'
+              additionalProperties: false
       responses:
         '201':
           description: User registered successfully
@@ -277,8 +287,15 @@ paths:
                 - username
                 - password
               properties:
-                username: { type: string }
-                password: { type: string }
+                username:
+                  type: string
+                  minLength: 1
+                  maxLength: 32
+                password:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+              additionalProperties: false
       responses:
         '200':
           description: Login successful
@@ -321,18 +338,22 @@ paths:
           required: false
           schema:
             type: string
+            maxLength: 64
         - name: limit
           in: query
           required: false
           schema:
             type: integer
             default: 20
+            minimum: 1
+            maximum: 100
         - name: offset
           in: query
           required: false
           schema:
             type: integer
             default: 0
+            minimum: 0
       responses:
         '200':
           description: List of matching users
@@ -478,6 +499,8 @@ paths:
           schema:
             type: integer
             default: 50
+            minimum: 1
+            maximum: 100
       responses:
         '200':
           description: Recent hugs feed
@@ -537,12 +560,15 @@ paths:
           schema:
             type: integer
             default: 20
+            minimum: 1
+            maximum: 100
         - name: offset
           in: query
           required: false
           schema:
             type: integer
             default: 0
+            minimum: 0
       responses:
         '200':
           description: Leaderboard entries

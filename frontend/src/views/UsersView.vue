@@ -43,6 +43,7 @@ onMounted(search)
         type="text"
         class="pl-9"
         placeholder="Поиск по имени..."
+        maxlength="64"
       />
     </div>
 

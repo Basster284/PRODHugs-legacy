@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Heart } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
+import { validateRegisterForm, parseBackendError, type FieldError } from '@/lib/validation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,22 +19,36 @@ const auth = useAuthStore()
 const username = ref('')
 const password = ref('')
 const passwordConfirm = ref('')
-const errorMsg = ref('')
+const serverError = ref('')
+const fieldErrors = ref<FieldError[]>([])
+const submitted = ref(false)
+
+function errorFor(field: string): string | undefined {
+  return fieldErrors.value.find((e) => e.field === field)?.message
+}
+
+const hasErrors = computed(() => fieldErrors.value.length > 0)
+
+function validate() {
+  fieldErrors.value = validateRegisterForm(username.value, password.value, passwordConfirm.value)
+}
 
 async function handleRegister() {
-  errorMsg.value = ''
-  if (password.value !== passwordConfirm.value) {
-    errorMsg.value = 'Пароли не совпадают'
-    return
-  }
-  if (password.value.length < 4) {
-    errorMsg.value = 'Пароль должен быть не менее 4 символов'
-    return
-  }
+  submitted.value = true
+  serverError.value = ''
+  validate()
+  if (hasErrors.value) return
+
   try {
     await auth.register(username.value, password.value)
   } catch (e: any) {
-    errorMsg.value = e.response?.data?.message || 'Ошибка регистрации'
+    const parsed = parseBackendError(e)
+    if (parsed.fieldErrors.length > 0) {
+      fieldErrors.value = [...fieldErrors.value, ...parsed.fieldErrors]
+    }
+    if (parsed.generalError) {
+      serverError.value = parsed.generalError
+    }
   }
 }
 </script>
@@ -57,8 +72,12 @@ async function handleRegister() {
               v-model="username"
               type="text"
               placeholder="username"
-              required
+              :class="{ 'border-destructive': submitted && errorFor('username') }"
+              @input="submitted && validate()"
             />
+            <p v-if="submitted && errorFor('username')" class="text-xs text-destructive">
+              {{ errorFor('username') }}
+            </p>
           </div>
           <div class="grid gap-2">
             <Label for="password">Пароль</Label>
@@ -67,8 +86,12 @@ async function handleRegister() {
               v-model="password"
               type="password"
               placeholder="********"
-              required
+              :class="{ 'border-destructive': submitted && errorFor('password') }"
+              @input="submitted && validate()"
             />
+            <p v-if="submitted && errorFor('password')" class="text-xs text-destructive">
+              {{ errorFor('password') }}
+            </p>
           </div>
           <div class="grid gap-2">
             <Label for="password-confirm">Подтверждение пароля</Label>
@@ -77,11 +100,15 @@ async function handleRegister() {
               v-model="passwordConfirm"
               type="password"
               placeholder="********"
-              required
+              :class="{ 'border-destructive': submitted && errorFor('passwordConfirm') }"
+              @input="submitted && validate()"
             />
+            <p v-if="submitted && errorFor('passwordConfirm')" class="text-xs text-destructive">
+              {{ errorFor('passwordConfirm') }}
+            </p>
           </div>
-          <p v-if="errorMsg" class="text-sm text-destructive text-center">
-            {{ errorMsg }}
+          <p v-if="serverError" class="text-sm text-destructive text-center">
+            {{ serverError }}
           </p>
           <Button type="submit" class="w-full" :disabled="auth.loading">
             {{ auth.loading ? 'Регистрация...' : 'Зарегистрироваться' }}
