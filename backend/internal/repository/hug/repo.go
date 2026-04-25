@@ -47,6 +47,17 @@ func toModelFeedItem(row storage.GetRecentHugsFeedRow) *models.HugFeedItem {
 	}
 }
 
+func toModelHistoryItem(row storage.ListHugsByUserRow) *models.HugFeedItem {
+	return &models.HugFeedItem{
+		ID:               row.ID,
+		GiverID:          row.GiverID,
+		ReceiverID:       row.ReceiverID,
+		GiverUsername:    row.GiverUsername,
+		ReceiverUsername: row.ReceiverUsername,
+		CreatedAt:        row.CreatedAt.Time,
+	}
+}
+
 func toModelLeaderboardEntry(row storage.GetLeaderboardRow) *models.LeaderboardEntry {
 	return &models.LeaderboardEntry{
 		UserID:       row.ID,

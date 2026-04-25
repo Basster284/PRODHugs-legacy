@@ -9,7 +9,7 @@ import (
 
 type hugRepo interface {
 	InsertHug(ctx context.Context, giverID, receiverID uuid.UUID) (*models.Hug, error)
-	ListHugsByUser(ctx context.Context, userID uuid.UUID) ([]*models.Hug, error)
+	ListHugsByUser(ctx context.Context, userID uuid.UUID) ([]*models.HugFeedItem, error)
 	GetCooldown(ctx context.Context, giverID, receiverID uuid.UUID) (*models.HugCooldown, error)
 	UpsertCooldown(ctx context.Context, giverID, receiverID uuid.UUID, cooldownSeconds int32) (*models.HugCooldown, error)
 	ReduceCooldown(ctx context.Context, giverID, receiverID uuid.UUID, reduction int32) (*models.HugCooldown, error)

@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { ArrowUp, ArrowDown, Heart } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
-import { useHugsStore, type UserProfile } from '@/stores/hugs'
+import { useHugsStore, type UserProfile, type HugFeedItem } from '@/stores/hugs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
@@ -13,7 +13,7 @@ const auth = useAuthStore()
 const hugsStore = useHugsStore()
 
 const profile = ref<UserProfile | null>(null)
-const history = ref<any[]>([])
+const history = ref<HugFeedItem[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
@@ -121,10 +121,12 @@ function formatDate(dateStr: string): string {
                   <ArrowUp v-if="hug.giver_id === auth.user?.id" class="size-3.5 text-muted-foreground" />
                   <ArrowDown v-else class="size-3.5 text-muted-foreground" />
                   <span v-if="hug.giver_id === auth.user?.id" class="text-muted-foreground">
-                    Ты обнял(а) кого-то
+                    Ты обнял(а)
+                    <RouterLink :to="`/user/${hug.receiver_id}`" class="text-foreground font-medium hover:underline">{{ hug.receiver_username }}</RouterLink>
                   </span>
                   <span v-else class="text-muted-foreground">
-                    Тебя кто-то обнял(а)
+                    <RouterLink :to="`/user/${hug.giver_id}`" class="text-foreground font-medium hover:underline">{{ hug.giver_username }}</RouterLink>
+                    обнял(а) тебя
                   </span>
                 </div>
                 <span class="text-xs text-muted-foreground tabular-nums">

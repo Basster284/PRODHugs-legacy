@@ -23,7 +23,7 @@ func (r *repo) InsertHug(ctx context.Context, giverID, receiverID uuid.UUID) (*m
 	return toModelHug(h), nil
 }
 
-func (r *repo) ListHugsByUser(ctx context.Context, userID uuid.UUID) ([]*models.Hug, error) {
+func (r *repo) ListHugsByUser(ctx context.Context, userID uuid.UUID) ([]*models.HugFeedItem, error) {
 	q := repository.Queries(ctx, r.q)
 
 	rows, err := q.ListHugsByUser(ctx, userID)
@@ -31,9 +31,9 @@ func (r *repo) ListHugsByUser(ctx context.Context, userID uuid.UUID) ([]*models.
 		return nil, err
 	}
 
-	result := make([]*models.Hug, len(rows))
+	result := make([]*models.HugFeedItem, len(rows))
 	for i, row := range rows {
-		result[i] = toModelHug(row)
+		result[i] = toModelHistoryItem(row)
 	}
 	return result, nil
 }

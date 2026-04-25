@@ -493,7 +493,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Hug'
+                  $ref: '#/components/schemas/HugFeedItem'
         '401':
           $ref: '#/components/responses/Unauthorized'
 

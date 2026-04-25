@@ -11,7 +11,7 @@ func (s *service) GetBalance(ctx context.Context, userID uuid.UUID) (*models.Bal
 	return s.balanceRepo.GetBalance(ctx, userID)
 }
 
-func (s *service) GetHugHistory(ctx context.Context, userID uuid.UUID) ([]*models.Hug, error) {
+func (s *service) GetHugHistory(ctx context.Context, userID uuid.UUID) ([]*models.HugFeedItem, error) {
 	return s.hugRepo.ListHugsByUser(ctx, userID)
 }
 

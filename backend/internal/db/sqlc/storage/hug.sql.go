@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const countHugsGiven = `-- name: CountHugsGiven :one
@@ -79,26 +80,45 @@ func (q *Queries) InsertHug(ctx context.Context, arg InsertHugParams) (Hug, erro
 }
 
 const listHugsByUser = `-- name: ListHugsByUser :many
-SELECT id, giver_id, receiver_id, created_at
-FROM hugs
-WHERE giver_id = $1 OR receiver_id = $1
-ORDER BY created_at DESC
+SELECT
+    h.id,
+    h.giver_id,
+    h.receiver_id,
+    h.created_at,
+    g.username AS giver_username,
+    r.username AS receiver_username
+FROM hugs h
+JOIN users g ON g.id = h.giver_id
+JOIN users r ON r.id = h.receiver_id
+WHERE h.giver_id = $1 OR h.receiver_id = $1
+ORDER BY h.created_at DESC
 `
 
-func (q *Queries) ListHugsByUser(ctx context.Context, giverID uuid.UUID) ([]Hug, error) {
+type ListHugsByUserRow struct {
+	ID               uuid.UUID
+	GiverID          uuid.UUID
+	ReceiverID       uuid.UUID
+	CreatedAt        pgtype.Timestamptz
+	GiverUsername    string
+	ReceiverUsername string
+}
+
+func (q *Queries) ListHugsByUser(ctx context.Context, giverID uuid.UUID) ([]ListHugsByUserRow, error) {
 	rows, err := q.db.Query(ctx, listHugsByUser, giverID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Hug
+	var items []ListHugsByUserRow
 	for rows.Next() {
-		var i Hug
+		var i ListHugsByUserRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.GiverID,
 			&i.ReceiverID,
 			&i.CreatedAt,
+			&i.GiverUsername,
+			&i.ReceiverUsername,
 		); err != nil {
 			return nil, err
 		}

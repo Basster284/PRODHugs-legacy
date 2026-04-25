@@ -50,11 +50,13 @@ func (h *HugHandler) GetHugHistory(ctx context.Context, req v1.GetHugHistoryRequ
 
 	result := make(v1.GetHugHistory200JSONResponse, len(hugs))
 	for i, hg := range hugs {
-		result[i] = v1.Hug{
-			Id:         hg.ID,
-			GiverId:    hg.GiverID,
-			ReceiverId: hg.ReceiverID,
-			CreatedAt:  hg.CreatedAt,
+		result[i] = v1.HugFeedItem{
+			Id:               hg.ID,
+			GiverId:          hg.GiverID,
+			ReceiverId:       hg.ReceiverID,
+			GiverUsername:    hg.GiverUsername,
+			ReceiverUsername: hg.ReceiverUsername,
+			CreatedAt:        hg.CreatedAt,
 		}
 	}
 
