@@ -37,7 +37,7 @@ const currentPath = computed(() => route.path)
 
 <template>
   <Sidebar collapsible="icon">
-    <SidebarHeader class="p-4">
+    <SidebarHeader class="p-4 group-data-[collapsible=icon]:p-2">
       <div class="flex items-center gap-2 overflow-hidden">
         <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Heart class="size-4" />
