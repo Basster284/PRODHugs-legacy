@@ -17,6 +17,7 @@ const props = defineProps<ToasterProps & { class?: string }>()
 
 <template>
   <Sonner
+    v-bind="props"
     :class="cn('toaster group', props.class)"
     :style="{
       '--normal-bg': 'var(--popover)',
