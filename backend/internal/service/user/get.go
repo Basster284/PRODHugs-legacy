@@ -10,26 +10,31 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *service) Login(ctx context.Context, username string, password string) (*models.User, string, error) {
+func (s *service) Login(ctx context.Context, username string, password string) (*models.User, string, string, error) {
 	u, err := s.repo.GetByUsername(ctx, username)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
 	ok, err := crypto.ComparePasswordAndHash(password, u.HashedPassword)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 	if !ok {
-		return nil, "", errorz.ErrInvalidCredentials
+		return nil, "", "", errorz.ErrInvalidCredentials
 	}
 
-	token, _, err := s.jwtManager.GenerateToken(u.ID, u.Role)
+	accessToken, _, err := s.jwtManager.GenerateAccessToken(u.ID, u.Role)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to generate JWT token: %w", err)
+		return nil, "", "", fmt.Errorf("failed to generate access token: %w", err)
 	}
 
-	return u, token, nil
+	refreshToken, err := s.jwtManager.GenerateRefreshToken(u.ID)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+
+	return u, accessToken, refreshToken, nil
 }
 
 func (s *service) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {

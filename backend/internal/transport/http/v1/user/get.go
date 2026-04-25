@@ -11,7 +11,7 @@ import (
 )
 
 func (h *UserHandler) Login(ctx context.Context, req v1.LoginRequestObject) (v1.LoginResponseObject, error) {
-	u, token, err := h.svc.Login(ctx, req.Body.Username, req.Body.Password)
+	u, accessToken, refreshToken, err := h.svc.Login(ctx, req.Body.Username, req.Body.Password)
 	if err != nil {
 		if errors.Is(err, errorz.ErrUserNotFound) || errors.Is(err, errorz.ErrInvalidCredentials) {
 			return v1.Login401JSONResponse{
@@ -24,9 +24,16 @@ func (h *UserHandler) Login(ctx context.Context, req v1.LoginRequestObject) (v1.
 		return nil, err
 	}
 
+	cookie := makeRefreshCookie(refreshToken, h.jwtManager.RefreshTokenDuration())
+
 	return v1.Login200JSONResponse{
-		User:  toV1User(u),
-		Token: token,
+		Body: v1.AuthResponse{
+			User:  toV1User(u),
+			Token: accessToken,
+		},
+		Headers: v1.Login200ResponseHeaders{
+			SetCookie: cookie.String(),
+		},
 	}, nil
 }
 

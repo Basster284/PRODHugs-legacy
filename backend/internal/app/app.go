@@ -63,7 +63,11 @@ func New(ctx context.Context, cfg *config.Config, l *slog.Logger) (*App, error) 
 		return nil, err
 	}
 
-	jwtManager := jwt.NewManager(a.cfg.JWT.Secret, time.Hour)
+	jwtManager := jwt.NewManager(
+		a.cfg.JWT.Secret,
+		time.Duration(a.cfg.JWT.AccessTokenDurationSec)*time.Second,
+		time.Duration(a.cfg.JWT.RefreshTokenDurationSec)*time.Second,
+	)
 
 	// Repositories
 	userRepo := userrepo.New(a.dbPool)
@@ -82,7 +86,7 @@ func New(ctx context.Context, cfg *config.Config, l *slog.Logger) (*App, error) 
 	})
 
 	// Handlers
-	userHandler := userhandler.New(userService)
+	userHandler := userhandler.New(userService, jwtManager)
 	hugHandler := hughandler.New(hugService)
 
 	if err := a.initEcho(); err != nil {

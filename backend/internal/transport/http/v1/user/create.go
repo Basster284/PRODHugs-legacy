@@ -47,7 +47,7 @@ func (h *UserHandler) RegisterUser(ctx context.Context, req v1.RegisterUserReque
 		HashedPassword: req.Body.Password,
 		Role:           "user",
 	}
-	u, token, err := h.svc.Create(ctx, input)
+	u, accessToken, refreshToken, err := h.svc.Create(ctx, input)
 	if err != nil {
 		if errors.Is(err, errorz.ErrUserAlreadyExists) {
 			return v1.RegisterUser409JSONResponse{
@@ -60,8 +60,15 @@ func (h *UserHandler) RegisterUser(ctx context.Context, req v1.RegisterUserReque
 		return nil, err
 	}
 
+	cookie := makeRefreshCookie(refreshToken, h.jwtManager.RefreshTokenDuration())
+
 	return v1.RegisterUser201JSONResponse{
-		User:  toV1User(u),
-		Token: token,
+		Body: v1.AuthResponse{
+			User:  toV1User(u),
+			Token: accessToken,
+		},
+		Headers: v1.RegisterUser201ResponseHeaders{
+			SetCookie: cookie.String(),
+		},
 	}, nil
 }

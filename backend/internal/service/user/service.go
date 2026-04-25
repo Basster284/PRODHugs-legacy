@@ -14,7 +14,8 @@ type repo interface {
 }
 
 type jwtManager interface {
-	GenerateToken(userID uuid.UUID, role string) (string, int64, error)
+	GenerateAccessToken(userID uuid.UUID, role string) (string, int64, error)
+	GenerateRefreshToken(userID uuid.UUID) (string, error)
 }
 
 type service struct {

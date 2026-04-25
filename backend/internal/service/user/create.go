@@ -7,22 +7,27 @@ import (
 	"go-service-template/pkg/crypto"
 )
 
-func (s *service) Create(ctx context.Context, input *models.CreateUser) (*models.User, string, error) {
+func (s *service) Create(ctx context.Context, input *models.CreateUser) (*models.User, string, string, error) {
 	hash, err := crypto.GenerateHash(input.Password)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to hash password: %w", err)
+		return nil, "", "", fmt.Errorf("failed to hash password: %w", err)
 	}
 	input.HashedPassword = hash
 
 	u, err := s.repo.Create(ctx, input)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
-	token, _, err := s.jwtManager.GenerateToken(u.ID, u.Role)
+	accessToken, _, err := s.jwtManager.GenerateAccessToken(u.ID, u.Role)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to generate JWT token: %w", err)
+		return nil, "", "", fmt.Errorf("failed to generate access token: %w", err)
 	}
 
-	return u, token, nil
+	refreshToken, err := s.jwtManager.GenerateRefreshToken(u.ID)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+
+	return u, accessToken, refreshToken, nil
 }

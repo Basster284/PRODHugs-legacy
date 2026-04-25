@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import router from '@/router'
 
 const api = axios.create({
@@ -6,8 +6,10 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // send HttpOnly cookies with every request
 })
 
+// ── Request interceptor: attach access token ──
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) {
@@ -16,15 +18,82 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// ── Response interceptor: silent refresh on 401 ──
+let isRefreshing = false
+let pendingQueue: Array<{
+  resolve: (token: string) => void
+  reject: (err: unknown) => void
+}> = []
+
+function processPendingQueue(token: string | null, error: unknown) {
+  for (const p of pendingQueue) {
+    if (token) {
+      p.resolve(token)
+    } else {
+      p.reject(error)
+    }
+  }
+  pendingQueue = []
+}
+
+const AUTH_PATHS = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout']
+
+function isAuthRequest(config: InternalAxiosRequestConfig | undefined): boolean {
+  if (!config?.url) return false
+  return AUTH_PATHS.some((p) => config.url!.endsWith(p))
+}
+
+function forceLogout() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  router.push('/login')
+}
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      router.push('/login')
+  async (error: AxiosError) => {
+    const originalRequest = error.config
+
+    // Only intercept 401s on non-auth endpoints
+    if (error.response?.status !== 401 || !originalRequest || isAuthRequest(originalRequest)) {
+      return Promise.reject(error)
     }
-    return Promise.reject(error)
+
+    // Prevent retrying the same request twice
+    if ((originalRequest as InternalAxiosRequestConfig & { _retried?: boolean })._retried) {
+      forceLogout()
+      return Promise.reject(error)
+    }
+
+    // If another refresh is already in-flight, queue this request
+    if (isRefreshing) {
+      return new Promise<string>((resolve, reject) => {
+        pendingQueue.push({ resolve, reject })
+      }).then((newToken) => {
+        originalRequest.headers.Authorization = `Bearer ${newToken}`
+        return api(originalRequest)
+      })
+    }
+
+    isRefreshing = true
+    ;(originalRequest as InternalAxiosRequestConfig & { _retried?: boolean })._retried = true
+
+    try {
+      const res = await api.post('/auth/refresh')
+      const newToken: string = res.data.token
+
+      localStorage.setItem('token', newToken)
+      originalRequest.headers.Authorization = `Bearer ${newToken}`
+
+      processPendingQueue(newToken, null)
+      return api(originalRequest)
+    } catch (refreshError) {
+      processPendingQueue(null, refreshError)
+      forceLogout()
+      return Promise.reject(refreshError)
+    } finally {
+      isRefreshing = false
+    }
   },
 )
 
@@ -36,6 +105,7 @@ export const authApi = {
     api.post('/auth/register', { username, password }),
   login: (username: string, password: string) =>
     api.post('/auth/login', { username, password }),
+  logout: () => api.post('/auth/logout'),
   me: () => api.get('/users/me'),
 }
 

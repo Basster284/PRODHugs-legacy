@@ -26,10 +26,12 @@ func OpenAPIValidationMiddleware(jwtManager *jwt.Manager) (echo.MiddlewareFunc, 
 		ErrorHandler: func(c echo.Context, err *echo.HTTPError) error {
 			finalCode := err.Code
 			msg := fmt.Sprintf("%v", err.Message)
-			if err.Code == http.StatusForbidden {
-				if strings.Contains(msg, "Authorization header") {
-					finalCode = http.StatusUnauthorized
-				}
+			// All security/auth failures come as 403 from the OAPI middleware,
+			// but the frontend expects 401 for any token issue (missing, expired, invalid).
+			if err.Code == http.StatusForbidden && (strings.Contains(msg, "Authorization") ||
+				strings.Contains(msg, "token") ||
+				strings.Contains(msg, "security")) {
+				finalCode = http.StatusUnauthorized
 			}
 			return c.JSON(finalCode, map[string]interface{}{
 				"type":   "validation_error",

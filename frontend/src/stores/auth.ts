@@ -65,7 +65,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function logout() {
+  async function logout() {
+    // Clear the refresh token cookie on the server
+    try {
+      await authApi.logout()
+    } catch {
+      // Ignore — we're logging out anyway
+    }
     token.value = null
     user.value = null
     localStorage.removeItem('token')
