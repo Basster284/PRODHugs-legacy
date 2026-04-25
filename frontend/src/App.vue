@@ -35,5 +35,5 @@ const showLayout = computed(() => {
   <template v-else>
     <RouterView />
   </template>
-  <Toaster />
+  <Toaster position="top-right" />
 </template>

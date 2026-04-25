@@ -2,22 +2,32 @@ volumes:
   pg_data:
 
 services:
-  service:
-    container_name: backend-dev
-    image: cosmtrek/air
+  nginx:
+    container_name: nginx
+    image: nginx:alpine
     ports:
-      - "${SERVER_PORT}:8080"
+      - "${APP_PORT:-3000}:80"
     volumes:
-      - ./:/app/service:Z
-    working_dir: /app/service
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+    restart: unless-stopped
+
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
     environment:
-      AIR_WD: /app/service
-
       SERVER_ADDR: "0.0.0.0:8080"
-
       POSTGRES_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
       POSTGRES_MAX_CONNS: "${POSTGRES_MAX_CONNS}"
-
       JWT_SECRET: "${JWT_SECRET}"
     restart: unless-stopped
     depends_on:
@@ -25,7 +35,7 @@ services:
         condition: service_healthy
 
   postgres:
-    container_name: backend-dev_postgres
+    container_name: postgres
     image: postgres:18-alpine
     restart: unless-stopped
     environment:
@@ -35,7 +45,7 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
