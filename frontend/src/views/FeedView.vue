@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { Wifi, WifiOff } from 'lucide-vue-next'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { Wifi, WifiOff, ChevronUp } from 'lucide-vue-next'
 import { useHugsStore, type HugFeedItem } from '@/stores/hugs'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 
 const hugsStore = useHugsStore()
@@ -14,6 +13,19 @@ const now = ref(Date.now())
 let ws: WebSocket | null = null
 let tick: ReturnType<typeof setInterval> | null = null
 
+/** IDs of items that arrived via WebSocket (for highlight effect) */
+const newItemIds = ref(new Set<string>())
+/** Items that arrived via WebSocket while the user is scrolled down */
+const pendingItems = ref<HugFeedItem[]>([])
+/** Whether the user has scrolled away from the top */
+const isScrolledAway = ref(false)
+/** Scroll container ref */
+const scrollContainer = ref<HTMLElement | null>(null)
+
+const SCROLL_THRESHOLD = 80
+
+const pendingCount = computed(() => pendingItems.value.length)
+
 function timeAgo(dateStr: string): string {
   const diff = Math.floor((now.value - new Date(dateStr).getTime()) / 1000)
   if (diff < 5) return 'только что'
@@ -21,6 +33,27 @@ function timeAgo(dateStr: string): string {
   if (diff < 3600) return `${Math.floor(diff / 60)} мин. назад`
   if (diff < 86400) return `${Math.floor(diff / 3600)} ч. назад`
   return new Date(dateStr).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+}
+
+function onScroll() {
+  if (!scrollContainer.value) return
+  isScrolledAway.value = scrollContainer.value.scrollTop > SCROLL_THRESHOLD
+}
+
+function prependItem(item: HugFeedItem) {
+  newItemIds.value.add(item.id)
+  feed.value.unshift(item)
+  if (feed.value.length > 100) feed.value = feed.value.slice(0, 100)
+}
+
+function flushPending() {
+  const items = pendingItems.value.splice(0)
+  for (const item of items) {
+    prependItem(item)
+  }
+  nextTick(() => {
+    scrollContainer.value?.scrollTo({ top: 0, behavior: 'smooth' })
+  })
 }
 
 function connectWS() {
@@ -34,8 +67,11 @@ function connectWS() {
   ws.onmessage = (event) => {
     try {
       const item = JSON.parse(event.data) as HugFeedItem
-      feed.value.unshift(item)
-      if (feed.value.length > 100) feed.value = feed.value.slice(0, 100)
+      if (isScrolledAway.value) {
+        pendingItems.value.unshift(item)
+      } else {
+        prependItem(item)
+      }
     } catch {
       // Ignore
     }
@@ -59,6 +95,17 @@ onMounted(async () => {
   tick = setInterval(() => {
     now.value = Date.now()
   }, 1000)
+
+  // Find the nearest scrollable ancestor for scroll detection
+  nextTick(() => {
+    let el: HTMLElement | null = document.querySelector('.feed-scroll-root')
+    if (!el) {
+      // Fallback: walk up to find the scrollable container
+      el = document.querySelector('main') ?? document.documentElement
+    }
+    scrollContainer.value = el
+    el.addEventListener('scroll', onScroll, { passive: true })
+  })
 })
 
 onUnmounted(() => {
@@ -70,6 +117,7 @@ onUnmounted(() => {
     clearInterval(tick)
     tick = null
   }
+  scrollContainer.value?.removeEventListener('scroll', onScroll)
 })
 </script>
 
@@ -91,44 +139,91 @@ onUnmounted(() => {
       <Skeleton v-for="i in 8" :key="i" class="h-12 w-full" />
     </div>
 
-    <div v-else-if="feed.length === 0" class="py-16 text-center text-muted-foreground">
+    <div v-else-if="feed.length === 0 && pendingCount === 0" class="py-16 text-center text-muted-foreground">
       <p class="text-lg font-medium">Пока нет обнимашек</p>
       <p class="mt-1 text-sm">Будьте первыми!</p>
     </div>
 
-    <div v-else class="rounded-md border divide-y">
-      <TransitionGroup name="feed">
-        <div
-          v-for="item in feed"
-          :key="item.id"
-          class="flex items-center gap-3 px-4 py-3"
+    <div v-else class="relative">
+      <!-- New events indicator -->
+      <Transition name="indicator">
+        <button
+          v-if="pendingCount > 0"
+          class="sticky top-2 z-20 mx-auto flex items-center gap-1.5 rounded-full border border-border/60
+                 bg-card/90 px-4 py-1.5 text-sm font-medium text-primary shadow-lg backdrop-blur-sm
+                 transition-all hover:bg-card hover:shadow-xl cursor-pointer"
+          @click="flushPending"
         >
-          <div class="flex-1 min-w-0 text-sm">
-            <RouterLink
-              :to="`/user/${item.giver_id}`"
-              class="font-medium hover:underline"
-            >{{ item.giver_username }}</RouterLink>
-            <span class="text-muted-foreground mx-1.5">обнял(а)</span>
-            <RouterLink
-              :to="`/user/${item.receiver_id}`"
-              class="font-medium hover:underline"
-            >{{ item.receiver_username }}</RouterLink>
+          <ChevronUp class="size-3.5" />
+          {{ pendingCount }} {{ pendingCount === 1 ? 'новая обнимашка' : 'новых обнимашек' }}
+        </button>
+      </Transition>
+
+      <div class="rounded-md border divide-y">
+        <TransitionGroup name="feed">
+          <div
+            v-for="item in feed"
+            :key="item.id"
+            class="flex items-center gap-3 px-4 py-3"
+            :class="{ 'feed-new': newItemIds.has(item.id) }"
+            @animationend="newItemIds.delete(item.id)"
+          >
+            <div class="flex-1 min-w-0 text-sm">
+              <RouterLink
+                :to="`/user/${item.giver_id}`"
+                class="font-medium hover:underline"
+              >{{ item.giver_username }}</RouterLink>
+              <span class="text-muted-foreground mx-1.5">обнял(а)</span>
+              <RouterLink
+                :to="`/user/${item.receiver_id}`"
+                class="font-medium hover:underline"
+              >{{ item.receiver_username }}</RouterLink>
+            </div>
+            <span class="shrink-0 text-xs text-muted-foreground tabular-nums">
+              {{ timeAgo(item.created_at) }}
+            </span>
           </div>
-          <span class="shrink-0 text-xs text-muted-foreground tabular-nums">
-            {{ timeAgo(item.created_at) }}
-          </span>
-        </div>
-      </TransitionGroup>
+        </TransitionGroup>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* Enter — slide down + fade in */
 .feed-enter-active {
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .feed-enter-from {
   opacity: 0;
-  transform: translateY(-10px);
+  transform: translateY(-12px);
+}
+
+/* Leave — fade out (for items dropping off the 100-item cap) */
+.feed-leave-active {
+  transition: all 0.25s ease-out;
+  position: absolute;
+  width: 100%;
+}
+.feed-leave-to {
+  opacity: 0;
+}
+
+/* Move — smooth repositioning when new items are prepended */
+.feed-move {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* New-events indicator enter/leave */
+.indicator-enter-active {
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.indicator-leave-active {
+  transition: all 0.2s ease-out;
+}
+.indicator-enter-from,
+.indicator-leave-to {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.95);
 }
 </style>
