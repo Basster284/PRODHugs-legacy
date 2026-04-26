@@ -54,7 +54,18 @@ onMounted(async () => {
 })
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('ru-RU', {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear()
+
+  if (isToday) {
+    return date.toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  return date.toLocaleString('ru-RU', {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
