@@ -1,6 +1,10 @@
 package models
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type CreateUser struct {
 	Username       string
@@ -16,4 +20,18 @@ type User struct {
 	Role           string
 	HashedPassword string
 	Gender         *string
+	BannedAt       *time.Time
+}
+
+type AdminUser struct {
+	ID       uuid.UUID
+	Username string
+	Role     string
+	Gender   *string
+	BannedAt *time.Time
+}
+
+type AdminStats struct {
+	TotalUsers  int64
+	BannedUsers int64
 }

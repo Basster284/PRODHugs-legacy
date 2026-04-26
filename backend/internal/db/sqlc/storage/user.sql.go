@@ -12,12 +12,123 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const adminUpdateGender = `-- name: AdminUpdateGender :one
+UPDATE users
+SET gender = $2
+WHERE id = $1
+RETURNING id, username, password, role, gender, banned_at
+`
+
+type AdminUpdateGenderParams struct {
+	ID     uuid.UUID
+	Gender pgtype.Text
+}
+
+func (q *Queries) AdminUpdateGender(ctx context.Context, arg AdminUpdateGenderParams) (User, error) {
+	row := q.db.QueryRow(ctx, adminUpdateGender, arg.ID, arg.Gender)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Password,
+		&i.Role,
+		&i.Gender,
+		&i.BannedAt,
+	)
+	return i, err
+}
+
+const adminUpdatePassword = `-- name: AdminUpdatePassword :exec
+UPDATE users
+SET password = $2
+WHERE id = $1
+`
+
+type AdminUpdatePasswordParams struct {
+	ID       uuid.UUID
+	Password string
+}
+
+func (q *Queries) AdminUpdatePassword(ctx context.Context, arg AdminUpdatePasswordParams) error {
+	_, err := q.db.Exec(ctx, adminUpdatePassword, arg.ID, arg.Password)
+	return err
+}
+
+const adminUpdateUsername = `-- name: AdminUpdateUsername :one
+UPDATE users
+SET username = $2
+WHERE id = $1
+RETURNING id, username, password, role, gender, banned_at
+`
+
+type AdminUpdateUsernameParams struct {
+	ID       uuid.UUID
+	Username string
+}
+
+func (q *Queries) AdminUpdateUsername(ctx context.Context, arg AdminUpdateUsernameParams) (User, error) {
+	row := q.db.QueryRow(ctx, adminUpdateUsername, arg.ID, arg.Username)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Password,
+		&i.Role,
+		&i.Gender,
+		&i.BannedAt,
+	)
+	return i, err
+}
+
+const banUser = `-- name: BanUser :one
+UPDATE users
+SET banned_at = NOW()
+WHERE id = $1 AND role != 'admin'
+RETURNING id, username, password, role, gender, banned_at
+`
+
+func (q *Queries) BanUser(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRow(ctx, banUser, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Password,
+		&i.Role,
+		&i.Gender,
+		&i.BannedAt,
+	)
+	return i, err
+}
+
+const countBannedUsers = `-- name: CountBannedUsers :one
+SELECT COUNT(*) FROM users WHERE banned_at IS NOT NULL
+`
+
+func (q *Queries) CountBannedUsers(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countBannedUsers)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countUsers = `-- name: CountUsers :one
+SELECT COUNT(*) FROM users
+`
+
+func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countUsers)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (username, password, role, gender)
 VALUES (
     $1, $2, $3, $4
 )
-RETURNING id, username, password, role, gender
+RETURNING id, username, password, role, gender, banned_at
 `
 
 type CreateUserParams struct {
@@ -41,6 +152,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Password,
 		&i.Role,
 		&i.Gender,
+		&i.BannedAt,
 	)
 	return i, err
 }
@@ -163,7 +275,7 @@ func (q *Queries) GetRecentHugsFeed(ctx context.Context, lim int32) ([]GetRecent
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, username, password, role, gender
+SELECT id, username, password, role, gender, banned_at
 FROM users
 WHERE id = $1
 `
@@ -177,12 +289,13 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.Password,
 		&i.Role,
 		&i.Gender,
+		&i.BannedAt,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, username, password, role, gender
+SELECT id, username, password, role, gender, banned_at
 FROM users
 WHERE username = $1
 `
@@ -196,6 +309,7 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.Password,
 		&i.Role,
 		&i.Gender,
+		&i.BannedAt,
 	)
 	return i, err
 }
@@ -265,6 +379,52 @@ func (q *Queries) ListAllUsers(ctx context.Context, arg ListAllUsersParams) ([]L
 	return items, nil
 }
 
+const listUsersAdmin = `-- name: ListUsersAdmin :many
+SELECT id, username, role, gender, banned_at
+FROM users
+ORDER BY username
+LIMIT $2::int OFFSET $1::int
+`
+
+type ListUsersAdminParams struct {
+	Off int32
+	Lim int32
+}
+
+type ListUsersAdminRow struct {
+	ID       uuid.UUID
+	Username string
+	Role     string
+	Gender   pgtype.Text
+	BannedAt pgtype.Timestamptz
+}
+
+func (q *Queries) ListUsersAdmin(ctx context.Context, arg ListUsersAdminParams) ([]ListUsersAdminRow, error) {
+	rows, err := q.db.Query(ctx, listUsersAdmin, arg.Off, arg.Lim)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUsersAdminRow
+	for rows.Next() {
+		var i ListUsersAdminRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Role,
+			&i.Gender,
+			&i.BannedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const searchUsers = `-- name: SearchUsers :many
 SELECT id, username, role, gender
 FROM users
@@ -311,6 +471,27 @@ func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]Sea
 	return items, nil
 }
 
+const unbanUser = `-- name: UnbanUser :one
+UPDATE users
+SET banned_at = NULL
+WHERE id = $1
+RETURNING id, username, password, role, gender, banned_at
+`
+
+func (q *Queries) UnbanUser(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRow(ctx, unbanUser, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Password,
+		&i.Role,
+		&i.Gender,
+		&i.BannedAt,
+	)
+	return i, err
+}
+
 const updateUserPassword = `-- name: UpdateUserPassword :exec
 UPDATE users
 SET password = $2
@@ -331,7 +512,7 @@ const updateUserSettings = `-- name: UpdateUserSettings :one
 UPDATE users
 SET gender = $2
 WHERE id = $1
-RETURNING id, username, password, role, gender
+RETURNING id, username, password, role, gender, banned_at
 `
 
 type UpdateUserSettingsParams struct {
@@ -348,6 +529,7 @@ func (q *Queries) UpdateUserSettings(ctx context.Context, arg UpdateUserSettings
 		&i.Password,
 		&i.Role,
 		&i.Gender,
+		&i.BannedAt,
 	)
 	return i, err
 }

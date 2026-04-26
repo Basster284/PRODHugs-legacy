@@ -21,6 +21,14 @@ func (h *UserHandler) Login(ctx context.Context, req v1.LoginRequestObject) (v1.
 				},
 			}, nil
 		}
+		if errors.Is(err, errorz.ErrUserBanned) {
+			return v1.Login403JSONResponse{
+				ForbiddenJSONResponse: v1.ForbiddenJSONResponse{
+					Message: "Ваш аккаунт заблокирован",
+					Code:    v1.USERBANNED,
+				},
+			}, nil
+		}
 		return nil, err
 	}
 

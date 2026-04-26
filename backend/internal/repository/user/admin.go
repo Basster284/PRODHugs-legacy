@@ -1,0 +1,116 @@
+package user
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"go-service-template/internal/db/sqlc/storage"
+	"go-service-template/internal/errorz"
+	"go-service-template/internal/models"
+	"go-service-template/internal/repository"
+	"go-service-template/pkg/dberrors"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+func (r *repo) BanUser(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	q := repository.Queries(ctx, r.q)
+
+	u, err := q.BanUser(ctx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errorz.ErrCannotBanAdmin
+		}
+		return nil, err
+	}
+
+	return toModelUser(u), nil
+}
+
+func (r *repo) UnbanUser(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	q := repository.Queries(ctx, r.q)
+
+	u, err := q.UnbanUser(ctx, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errorz.ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	return toModelUser(u), nil
+}
+
+func (r *repo) CountUsers(ctx context.Context) (int64, error) {
+	q := repository.Queries(ctx, r.q)
+	return q.CountUsers(ctx)
+}
+
+func (r *repo) CountBannedUsers(ctx context.Context) (int64, error) {
+	q := repository.Queries(ctx, r.q)
+	return q.CountBannedUsers(ctx)
+}
+
+func (r *repo) ListUsersAdmin(ctx context.Context, limit, offset int32) ([]*models.AdminUser, error) {
+	q := repository.Queries(ctx, r.q)
+
+	rows, err := q.ListUsersAdmin(ctx, storage.ListUsersAdminParams{
+		Lim: limit,
+		Off: offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	users := make([]*models.AdminUser, 0, len(rows))
+	for _, row := range rows {
+		users = append(users, toAdminUser(row))
+	}
+	return users, nil
+}
+
+func (r *repo) AdminUpdateUsername(ctx context.Context, id uuid.UUID, username string) (*models.User, error) {
+	q := repository.Queries(ctx, r.q)
+
+	u, err := q.AdminUpdateUsername(ctx, storage.AdminUpdateUsernameParams{
+		ID:       id,
+		Username: username,
+	})
+	if err != nil {
+		if dberrors.IsUniqueViolation(err) {
+			return nil, errorz.ErrUserAlreadyExists
+		}
+		return nil, err
+	}
+
+	return toModelUser(u), nil
+}
+
+func (r *repo) AdminUpdateGender(ctx context.Context, id uuid.UUID, gender *string) (*models.User, error) {
+	q := repository.Queries(ctx, r.q)
+
+	var g pgtype.Text
+	if gender != nil {
+		g = pgtype.Text{String: *gender, Valid: true}
+	}
+
+	u, err := q.AdminUpdateGender(ctx, storage.AdminUpdateGenderParams{
+		ID:     id,
+		Gender: g,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return toModelUser(u), nil
+}
+
+func (r *repo) AdminUpdatePassword(ctx context.Context, id uuid.UUID, hashedPassword string) error {
+	q := repository.Queries(ctx, r.q)
+
+	return q.AdminUpdatePassword(ctx, storage.AdminUpdatePasswordParams{
+		ID:       id,
+		Password: hashedPassword,
+	})
+}

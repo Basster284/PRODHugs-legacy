@@ -1,17 +1,26 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'
-import { LayoutDashboard, Users, Newspaper, Trophy } from 'lucide-vue-next'
+import { LayoutDashboard, Users, Newspaper, Trophy, Shield } from 'lucide-vue-next'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
+const auth = useAuthStore()
 const currentPath = computed(() => route.path)
 
-const items = [
+const baseItems = [
   { title: 'Главная', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Люди', url: '/users', icon: Users },
   { title: 'Лента', url: '/feed', icon: Newspaper },
   { title: 'Рейтинг', url: '/leaderboard', icon: Trophy },
 ]
+
+const items = computed(() => {
+  if (auth.user?.role === 'admin') {
+    return [...baseItems, { title: 'Админ', url: '/admin', icon: Shield }]
+  }
+  return baseItems
+})
 
 function isActive(url: string) {
   return currentPath.value === url || currentPath.value.startsWith(url + '/')
@@ -23,7 +32,7 @@ function isActive(url: string) {
     class="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-sm md:hidden"
     style="padding-bottom: env(safe-area-inset-bottom, 0px)"
   >
-    <div class="grid h-14 grid-cols-4">
+    <div class="grid h-14" :class="items.length === 5 ? 'grid-cols-5' : 'grid-cols-4'">
       <RouterLink
         v-for="item in items"
         :key="item.url"

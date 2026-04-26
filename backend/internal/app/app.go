@@ -34,6 +34,7 @@ import (
 	hugservice "go-service-template/internal/service/hug"
 	userservice "go-service-template/internal/service/user"
 
+	adminhandler "go-service-template/internal/transport/http/v1/admin"
 	hughandler "go-service-template/internal/transport/http/v1/hug"
 	userhandler "go-service-template/internal/transport/http/v1/user"
 
@@ -88,6 +89,7 @@ func New(ctx context.Context, cfg *config.Config, l *slog.Logger) (*App, error) 
 	// Handlers
 	userHandler := userhandler.New(userService, jwtManager)
 	hugHandler := hughandler.New(hugService)
+	adminHandler := adminhandler.New(userService)
 
 	if err := a.initEcho(); err != nil {
 		return nil, err
@@ -99,7 +101,7 @@ func New(ctx context.Context, cfg *config.Config, l *slog.Logger) (*App, error) 
 		custommiddleware.StrictErrorMiddleware,
 	}
 
-	strictServer := server.New(userHandler, hugHandler)
+	strictServer := server.New(userHandler, hugHandler, adminHandler)
 	strictHandler := v1.NewStrictHandler(strictServer, strictMiddlewares)
 
 	oapiValidationMiddleware, err := custommiddleware.OpenAPIValidationMiddleware(jwtManager)

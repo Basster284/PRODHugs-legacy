@@ -64,6 +64,15 @@ func (h *UserHandler) RefreshToken(ctx context.Context, req v1.RefreshTokenReque
 		}, nil
 	}
 
+	if u.BannedAt != nil {
+		return v1.RefreshToken403JSONResponse{
+			ForbiddenJSONResponse: v1.ForbiddenJSONResponse{
+				Message: "Ваш аккаунт заблокирован",
+				Code:    v1.USERBANNED,
+			},
+		}, nil
+	}
+
 	accessToken, _, err := h.jwtManager.GenerateAccessToken(u.ID, u.Role)
 	if err != nil {
 		return nil, err

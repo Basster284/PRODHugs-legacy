@@ -53,16 +53,30 @@ const router = createRouter({
       component: () => import('@/views/FeedView.vue'),
       meta: { auth: true },
     },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('@/views/AdminView.vue'),
+      meta: { auth: true, admin: true },
+    },
   ],
 })
 
 router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('token')
+  const userStr = localStorage.getItem('user')
 
   if (to.meta.auth && !token) {
     next('/login')
   } else if (to.meta.guest && token) {
     next('/dashboard')
+  } else if (to.meta.admin) {
+    const user = userStr ? JSON.parse(userStr) : null
+    if (user?.role !== 'admin') {
+      next('/dashboard')
+    } else {
+      next()
+    }
   } else {
     next()
   }

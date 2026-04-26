@@ -1,0 +1,56 @@
+package user
+
+import (
+	"context"
+	"fmt"
+	"go-service-template/internal/models"
+	"go-service-template/pkg/crypto"
+
+	"github.com/google/uuid"
+)
+
+func (s *service) GetAdminStats(ctx context.Context) (*models.AdminStats, error) {
+	total, err := s.repo.CountUsers(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count users: %w", err)
+	}
+
+	banned, err := s.repo.CountBannedUsers(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count banned users: %w", err)
+	}
+
+	return &models.AdminStats{
+		TotalUsers:  total,
+		BannedUsers: banned,
+	}, nil
+}
+
+func (s *service) ListUsersAdmin(ctx context.Context, limit, offset int32) ([]*models.AdminUser, error) {
+	return s.repo.ListUsersAdmin(ctx, limit, offset)
+}
+
+func (s *service) BanUser(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	return s.repo.BanUser(ctx, id)
+}
+
+func (s *service) UnbanUser(ctx context.Context, id uuid.UUID) (*models.User, error) {
+	return s.repo.UnbanUser(ctx, id)
+}
+
+func (s *service) AdminUpdateUsername(ctx context.Context, id uuid.UUID, username string) (*models.User, error) {
+	return s.repo.AdminUpdateUsername(ctx, id, username)
+}
+
+func (s *service) AdminUpdateGender(ctx context.Context, id uuid.UUID, gender *string) (*models.User, error) {
+	return s.repo.AdminUpdateGender(ctx, id, gender)
+}
+
+func (s *service) AdminUpdatePassword(ctx context.Context, id uuid.UUID, newPassword string) error {
+	hash, err := crypto.GenerateHash(newPassword)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	return s.repo.AdminUpdatePassword(ctx, id, hash)
+}

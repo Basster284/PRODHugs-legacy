@@ -6,7 +6,9 @@ import {
   Users,
   Newspaper,
   Trophy,
+  Shield,
 } from 'lucide-vue-next'
+import { useAuthStore } from '@/stores/auth'
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +23,7 @@ import {
 } from '@/components/ui/sidebar'
 
 const route = useRoute()
+const auth = useAuthStore()
 
 const items = [
   { title: 'Главная', url: '/dashboard', icon: LayoutDashboard },
@@ -29,6 +32,7 @@ const items = [
   { title: 'Рейтинг', url: '/leaderboard', icon: Trophy },
 ]
 
+const isAdmin = computed(() => auth.user?.role === 'admin')
 const currentPath = computed(() => route.path)
 </script>
 
@@ -53,6 +57,24 @@ const currentPath = computed(() => route.path)
                 <RouterLink :to="item.url">
                   <component :is="item.icon" />
                   <span>[{{ item.title }}]</span>
+                </RouterLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+      <SidebarGroup v-if="isAdmin">
+        <SidebarGroupLabel class="text-muted-foreground">Администрирование</SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                as-child
+                :is-active="currentPath === '/admin' || currentPath.startsWith('/admin/')"
+              >
+                <RouterLink to="/admin">
+                  <Shield />
+                  <span>[Админ-панель]</span>
                 </RouterLink>
               </SidebarMenuButton>
             </SidebarMenuItem>

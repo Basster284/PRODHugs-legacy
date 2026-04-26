@@ -140,3 +140,18 @@ export const leaderboardApi = {
   get: (limit = 20, offset = 0) =>
     api.get('/leaderboard', { params: { limit, offset } }),
 }
+
+// Admin
+export const adminApi = {
+  getStats: () => api.get('/admin/stats'),
+  getUsers: (limit = 20, offset = 0) =>
+    api.get('/admin/users', { params: { limit, offset } }),
+  banUser: (userId: string) => api.put(`/admin/users/${userId}/ban`),
+  unbanUser: (userId: string) => api.delete(`/admin/users/${userId}/ban`),
+  updateUsername: (userId: string, username: string) =>
+    api.put(`/admin/users/${userId}/username`, { username }),
+  updateGender: (userId: string, gender: string | null) =>
+    api.put(`/admin/users/${userId}/gender`, { gender }),
+  updatePassword: (userId: string, password: string) =>
+    api.put(`/admin/users/${userId}/password`, { password }),
+}

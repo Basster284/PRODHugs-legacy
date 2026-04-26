@@ -27,13 +27,21 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
+// Defines values for AdminUserRole.
+const (
+	AdminUserRoleAdmin AdminUserRole = "admin"
+	AdminUserRoleUser  AdminUserRole = "user"
+)
+
 // Defines values for ErrorCode.
 const (
+	CANNOTBANADMIN      ErrorCode = "CANNOT_BAN_ADMIN"
 	CANNOTHUGSELF       ErrorCode = "CANNOT_HUG_SELF"
 	COOLDOWNACTIVE      ErrorCode = "COOLDOWN_ACTIVE"
 	INSUFFICIENTBALANCE ErrorCode = "INSUFFICIENT_BALANCE"
 	INVALIDCREDENTIALS  ErrorCode = "INVALID_CREDENTIALS"
 	USERALREADYEXISTS   ErrorCode = "USER_ALREADY_EXISTS"
+	USERBANNED          ErrorCode = "USER_BANNED"
 	USERNOTFOUND        ErrorCode = "USER_NOT_FOUND"
 	WEAKPASSWORD        ErrorCode = "WEAK_PASSWORD"
 	WRONGPASSWORD       ErrorCode = "WRONG_PASSWORD"
@@ -50,6 +58,24 @@ const (
 	UserRoleAdmin UserRole = "admin"
 	UserRoleUser  UserRole = "user"
 )
+
+// AdminStats defines model for AdminStats.
+type AdminStats struct {
+	BannedUsers int `json:"banned_users"`
+	TotalUsers  int `json:"total_users"`
+}
+
+// AdminUser defines model for AdminUser.
+type AdminUser struct {
+	BannedAt *time.Time         `json:"banned_at"`
+	Gender   *Gender            `json:"gender,omitempty"`
+	Id       openapi_types.UUID `json:"id"`
+	Role     AdminUserRole      `json:"role"`
+	Username string             `json:"username"`
+}
+
+// AdminUserRole defines model for AdminUser.Role.
+type AdminUserRole string
 
 // AuthResponse defines model for AuthResponse.
 type AuthResponse struct {
@@ -180,6 +206,27 @@ type TooManyRequests = Error
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
 
+// GetAdminUsersParams defines parameters for GetAdminUsers.
+type GetAdminUsersParams struct {
+	Limit  *int `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
+// AdminUpdateGenderJSONBody defines parameters for AdminUpdateGender.
+type AdminUpdateGenderJSONBody struct {
+	Gender *Gender `json:"gender,omitempty"`
+}
+
+// AdminUpdatePasswordJSONBody defines parameters for AdminUpdatePassword.
+type AdminUpdatePasswordJSONBody struct {
+	Password string `json:"password"`
+}
+
+// AdminUpdateUsernameJSONBody defines parameters for AdminUpdateUsername.
+type AdminUpdateUsernameJSONBody struct {
+	Username string `json:"username"`
+}
+
 // LoginJSONBody defines parameters for Login.
 type LoginJSONBody struct {
 	Password string `json:"password"`
@@ -232,6 +279,15 @@ type SearchUsersParams struct {
 	Offset *int    `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
+// AdminUpdateGenderJSONRequestBody defines body for AdminUpdateGender for application/json ContentType.
+type AdminUpdateGenderJSONRequestBody AdminUpdateGenderJSONBody
+
+// AdminUpdatePasswordJSONRequestBody defines body for AdminUpdatePassword for application/json ContentType.
+type AdminUpdatePasswordJSONRequestBody AdminUpdatePasswordJSONBody
+
+// AdminUpdateUsernameJSONRequestBody defines body for AdminUpdateUsername for application/json ContentType.
+type AdminUpdateUsernameJSONRequestBody AdminUpdateUsernameJSONBody
+
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody LoginJSONBody
 
@@ -249,6 +305,27 @@ type ServerInterface interface {
 	// admin ping (testing auth)
 	// (GET /admin/ping)
 	GetAdminPing(ctx echo.Context) error
+	// Get admin dashboard stats
+	// (GET /admin/stats)
+	GetAdminStats(ctx echo.Context) error
+	// List all users for admin panel
+	// (GET /admin/users)
+	GetAdminUsers(ctx echo.Context, params GetAdminUsersParams) error
+	// Unban a user
+	// (DELETE /admin/users/{userId}/ban)
+	UnbanUser(ctx echo.Context, userId openapi_types.UUID) error
+	// Ban a user
+	// (PUT /admin/users/{userId}/ban)
+	BanUser(ctx echo.Context, userId openapi_types.UUID) error
+	// Change a user's gender
+	// (PUT /admin/users/{userId}/gender)
+	AdminUpdateGender(ctx echo.Context, userId openapi_types.UUID) error
+	// Change a user's password
+	// (PUT /admin/users/{userId}/password)
+	AdminUpdatePassword(ctx echo.Context, userId openapi_types.UUID) error
+	// Change a user's username
+	// (PUT /admin/users/{userId}/username)
+	AdminUpdateUsername(ctx echo.Context, userId openapi_types.UUID) error
 	// Login
 	// (POST /auth/login)
 	Login(ctx echo.Context) error
@@ -321,6 +398,134 @@ func (w *ServerInterfaceWrapper) GetAdminPing(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetAdminPing(ctx)
+	return err
+}
+
+// GetAdminStats converts echo context to params.
+func (w *ServerInterfaceWrapper) GetAdminStats(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{"admin"})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetAdminStats(ctx)
+	return err
+}
+
+// GetAdminUsers converts echo context to params.
+func (w *ServerInterfaceWrapper) GetAdminUsers(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{"admin"})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAdminUsersParams
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "offset", ctx.QueryParams(), &params.Offset)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter offset: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetAdminUsers(ctx, params)
+	return err
+}
+
+// UnbanUser converts echo context to params.
+func (w *ServerInterfaceWrapper) UnbanUser(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "userId" -------------
+	var userId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", ctx.Param("userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userId: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{"admin"})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.UnbanUser(ctx, userId)
+	return err
+}
+
+// BanUser converts echo context to params.
+func (w *ServerInterfaceWrapper) BanUser(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "userId" -------------
+	var userId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", ctx.Param("userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userId: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{"admin"})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.BanUser(ctx, userId)
+	return err
+}
+
+// AdminUpdateGender converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminUpdateGender(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "userId" -------------
+	var userId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", ctx.Param("userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userId: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{"admin"})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminUpdateGender(ctx, userId)
+	return err
+}
+
+// AdminUpdatePassword converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminUpdatePassword(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "userId" -------------
+	var userId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", ctx.Param("userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userId: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{"admin"})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminUpdatePassword(ctx, userId)
+	return err
+}
+
+// AdminUpdateUsername converts echo context to params.
+func (w *ServerInterfaceWrapper) AdminUpdateUsername(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "userId" -------------
+	var userId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userId", ctx.Param("userId"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userId: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{"admin"})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AdminUpdateUsername(ctx, userId)
 	return err
 }
 
@@ -644,6 +849,13 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	}
 
 	router.GET(baseURL+"/admin/ping", wrapper.GetAdminPing)
+	router.GET(baseURL+"/admin/stats", wrapper.GetAdminStats)
+	router.GET(baseURL+"/admin/users", wrapper.GetAdminUsers)
+	router.DELETE(baseURL+"/admin/users/:userId/ban", wrapper.UnbanUser)
+	router.PUT(baseURL+"/admin/users/:userId/ban", wrapper.BanUser)
+	router.PUT(baseURL+"/admin/users/:userId/gender", wrapper.AdminUpdateGender)
+	router.PUT(baseURL+"/admin/users/:userId/password", wrapper.AdminUpdatePassword)
+	router.PUT(baseURL+"/admin/users/:userId/username", wrapper.AdminUpdateUsername)
 	router.POST(baseURL+"/auth/login", wrapper.Login)
 	router.POST(baseURL+"/auth/logout", wrapper.Logout)
 	router.POST(baseURL+"/auth/refresh", wrapper.RefreshToken)
@@ -714,6 +926,318 @@ func (response GetAdminPing403JSONResponse) VisitGetAdminPingResponse(w http.Res
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetAdminStatsRequestObject struct {
+}
+
+type GetAdminStatsResponseObject interface {
+	VisitGetAdminStatsResponse(w http.ResponseWriter) error
+}
+
+type GetAdminStats200JSONResponse AdminStats
+
+func (response GetAdminStats200JSONResponse) VisitGetAdminStatsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAdminStats401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetAdminStats401JSONResponse) VisitGetAdminStatsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAdminStats403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetAdminStats403JSONResponse) VisitGetAdminStatsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAdminUsersRequestObject struct {
+	Params GetAdminUsersParams
+}
+
+type GetAdminUsersResponseObject interface {
+	VisitGetAdminUsersResponse(w http.ResponseWriter) error
+}
+
+type GetAdminUsers200JSONResponse []AdminUser
+
+func (response GetAdminUsers200JSONResponse) VisitGetAdminUsersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAdminUsers401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetAdminUsers401JSONResponse) VisitGetAdminUsersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAdminUsers403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response GetAdminUsers403JSONResponse) VisitGetAdminUsersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UnbanUserRequestObject struct {
+	UserId openapi_types.UUID `json:"userId"`
+}
+
+type UnbanUserResponseObject interface {
+	VisitUnbanUserResponse(w http.ResponseWriter) error
+}
+
+type UnbanUser200JSONResponse AdminUser
+
+func (response UnbanUser200JSONResponse) VisitUnbanUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UnbanUser401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response UnbanUser401JSONResponse) VisitUnbanUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UnbanUser403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response UnbanUser403JSONResponse) VisitUnbanUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UnbanUser404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response UnbanUser404JSONResponse) VisitUnbanUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BanUserRequestObject struct {
+	UserId openapi_types.UUID `json:"userId"`
+}
+
+type BanUserResponseObject interface {
+	VisitBanUserResponse(w http.ResponseWriter) error
+}
+
+type BanUser200JSONResponse AdminUser
+
+func (response BanUser200JSONResponse) VisitBanUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BanUser400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response BanUser400JSONResponse) VisitBanUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BanUser401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response BanUser401JSONResponse) VisitBanUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BanUser403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response BanUser403JSONResponse) VisitBanUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BanUser404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response BanUser404JSONResponse) VisitBanUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateGenderRequestObject struct {
+	UserId openapi_types.UUID `json:"userId"`
+	Body   *AdminUpdateGenderJSONRequestBody
+}
+
+type AdminUpdateGenderResponseObject interface {
+	VisitAdminUpdateGenderResponse(w http.ResponseWriter) error
+}
+
+type AdminUpdateGender200JSONResponse AdminUser
+
+func (response AdminUpdateGender200JSONResponse) VisitAdminUpdateGenderResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateGender400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminUpdateGender400JSONResponse) VisitAdminUpdateGenderResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateGender401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminUpdateGender401JSONResponse) VisitAdminUpdateGenderResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateGender403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminUpdateGender403JSONResponse) VisitAdminUpdateGenderResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdatePasswordRequestObject struct {
+	UserId openapi_types.UUID `json:"userId"`
+	Body   *AdminUpdatePasswordJSONRequestBody
+}
+
+type AdminUpdatePasswordResponseObject interface {
+	VisitAdminUpdatePasswordResponse(w http.ResponseWriter) error
+}
+
+type AdminUpdatePassword200JSONResponse struct {
+	Message string `json:"message"`
+}
+
+func (response AdminUpdatePassword200JSONResponse) VisitAdminUpdatePasswordResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdatePassword400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminUpdatePassword400JSONResponse) VisitAdminUpdatePasswordResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdatePassword401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminUpdatePassword401JSONResponse) VisitAdminUpdatePasswordResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdatePassword403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminUpdatePassword403JSONResponse) VisitAdminUpdatePasswordResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateUsernameRequestObject struct {
+	UserId openapi_types.UUID `json:"userId"`
+	Body   *AdminUpdateUsernameJSONRequestBody
+}
+
+type AdminUpdateUsernameResponseObject interface {
+	VisitAdminUpdateUsernameResponse(w http.ResponseWriter) error
+}
+
+type AdminUpdateUsername200JSONResponse AdminUser
+
+func (response AdminUpdateUsername200JSONResponse) VisitAdminUpdateUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateUsername400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminUpdateUsername400JSONResponse) VisitAdminUpdateUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateUsername401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminUpdateUsername401JSONResponse) VisitAdminUpdateUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateUsername403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminUpdateUsername403JSONResponse) VisitAdminUpdateUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateUsername409JSONResponse struct{ ConflictJSONResponse }
+
+func (response AdminUpdateUsername409JSONResponse) VisitAdminUpdateUsernameResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type LoginRequestObject struct {
 	Body *LoginJSONRequestBody
 }
@@ -753,6 +1277,15 @@ type Login401JSONResponse struct{ UnauthorizedJSONResponse }
 func (response Login401JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type Login403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response Login403JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -815,6 +1348,15 @@ type RefreshToken401JSONResponse struct{ UnauthorizedJSONResponse }
 func (response RefreshToken401JSONResponse) VisitRefreshTokenResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RefreshToken403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response RefreshToken403JSONResponse) VisitRefreshTokenResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -1327,6 +1869,27 @@ type StrictServerInterface interface {
 	// admin ping (testing auth)
 	// (GET /admin/ping)
 	GetAdminPing(ctx context.Context, request GetAdminPingRequestObject) (GetAdminPingResponseObject, error)
+	// Get admin dashboard stats
+	// (GET /admin/stats)
+	GetAdminStats(ctx context.Context, request GetAdminStatsRequestObject) (GetAdminStatsResponseObject, error)
+	// List all users for admin panel
+	// (GET /admin/users)
+	GetAdminUsers(ctx context.Context, request GetAdminUsersRequestObject) (GetAdminUsersResponseObject, error)
+	// Unban a user
+	// (DELETE /admin/users/{userId}/ban)
+	UnbanUser(ctx context.Context, request UnbanUserRequestObject) (UnbanUserResponseObject, error)
+	// Ban a user
+	// (PUT /admin/users/{userId}/ban)
+	BanUser(ctx context.Context, request BanUserRequestObject) (BanUserResponseObject, error)
+	// Change a user's gender
+	// (PUT /admin/users/{userId}/gender)
+	AdminUpdateGender(ctx context.Context, request AdminUpdateGenderRequestObject) (AdminUpdateGenderResponseObject, error)
+	// Change a user's password
+	// (PUT /admin/users/{userId}/password)
+	AdminUpdatePassword(ctx context.Context, request AdminUpdatePasswordRequestObject) (AdminUpdatePasswordResponseObject, error)
+	// Change a user's username
+	// (PUT /admin/users/{userId}/username)
+	AdminUpdateUsername(ctx context.Context, request AdminUpdateUsernameRequestObject) (AdminUpdateUsernameResponseObject, error)
 	// Login
 	// (POST /auth/login)
 	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
@@ -1415,6 +1978,197 @@ func (sh *strictHandler) GetAdminPing(ctx echo.Context) error {
 		return err
 	} else if validResponse, ok := response.(GetAdminPingResponseObject); ok {
 		return validResponse.VisitGetAdminPingResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetAdminStats operation middleware
+func (sh *strictHandler) GetAdminStats(ctx echo.Context) error {
+	var request GetAdminStatsRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAdminStats(ctx.Request().Context(), request.(GetAdminStatsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAdminStats")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetAdminStatsResponseObject); ok {
+		return validResponse.VisitGetAdminStatsResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetAdminUsers operation middleware
+func (sh *strictHandler) GetAdminUsers(ctx echo.Context, params GetAdminUsersParams) error {
+	var request GetAdminUsersRequestObject
+
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAdminUsers(ctx.Request().Context(), request.(GetAdminUsersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAdminUsers")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetAdminUsersResponseObject); ok {
+		return validResponse.VisitGetAdminUsersResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// UnbanUser operation middleware
+func (sh *strictHandler) UnbanUser(ctx echo.Context, userId openapi_types.UUID) error {
+	var request UnbanUserRequestObject
+
+	request.UserId = userId
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.UnbanUser(ctx.Request().Context(), request.(UnbanUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnbanUser")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(UnbanUserResponseObject); ok {
+		return validResponse.VisitUnbanUserResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// BanUser operation middleware
+func (sh *strictHandler) BanUser(ctx echo.Context, userId openapi_types.UUID) error {
+	var request BanUserRequestObject
+
+	request.UserId = userId
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.BanUser(ctx.Request().Context(), request.(BanUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "BanUser")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(BanUserResponseObject); ok {
+		return validResponse.VisitBanUserResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateGender operation middleware
+func (sh *strictHandler) AdminUpdateGender(ctx echo.Context, userId openapi_types.UUID) error {
+	var request AdminUpdateGenderRequestObject
+
+	request.UserId = userId
+
+	var body AdminUpdateGenderJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateGender(ctx.Request().Context(), request.(AdminUpdateGenderRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateGender")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateGenderResponseObject); ok {
+		return validResponse.VisitAdminUpdateGenderResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdatePassword operation middleware
+func (sh *strictHandler) AdminUpdatePassword(ctx echo.Context, userId openapi_types.UUID) error {
+	var request AdminUpdatePasswordRequestObject
+
+	request.UserId = userId
+
+	var body AdminUpdatePasswordJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdatePassword(ctx.Request().Context(), request.(AdminUpdatePasswordRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdatePassword")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdatePasswordResponseObject); ok {
+		return validResponse.VisitAdminUpdatePasswordResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AdminUpdateUsername operation middleware
+func (sh *strictHandler) AdminUpdateUsername(ctx echo.Context, userId openapi_types.UUID) error {
+	var request AdminUpdateUsernameRequestObject
+
+	request.UserId = userId
+
+	var body AdminUpdateUsernameJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateUsername(ctx.Request().Context(), request.(AdminUpdateUsernameRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateUsername")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AdminUpdateUsernameResponseObject); ok {
+		return validResponse.VisitAdminUpdateUsernameResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}
@@ -1901,49 +2655,55 @@ func (sh *strictHandler) GetUserProfile(ctx echo.Context, userId openapi_types.U
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xaW1PjyPX/Kl3934fdfwlsYJKa5c1jYHBCDGXDTpIJcTXSsdw7UremL0O8U/7uqb5I",
-	"lmTJFxjMTpInLNTd5/Y7lz5HX3HI04wzYEri069YgMw4k2Af3pFoBJ81SGWeQs4UMPuTZFlCQ6IoZ51f",
-	"JWfmfzKcQUrMrx8ETPEp/r/O8uiOeys750JwgReLRYAjkKGgmTkEnxpaKCe2CHCfs2lCwz0QDnNKiwBf",
-	"cPFAowjYy5OdFqQWAR5ydcE1i16e7JAr5EgtAnzL+V8Im3u1y5enPiIKUEJTqlAHhZwnEX9kiISKfgHD",
-	"0B0jWs24oL/BHnRRoWZe+x3mwJ5Ws5H3BfOcCZ6BUNQ5huKfHEbUPAN8iqUSlMVGAi1BbGLozqwx9AR8",
-	"1lQYUT/6I/0B90F+Mn/4FRw235GEsLCBGZJy7XTk91CmIDYk3GkTanU55SIlCp9irWmEgzrrNXbyjUF+",
-	"fBNLfW/BAZvyVb5CwiYzHZcYe+A8AWIRnxt/IiHkLJLN7Mf0y7b8G/ZD2G19SiijLF7HQ00tBUNVcg3y",
-	"NJ0fFDpp0uYZocl8BI9ERO3II4kAEs0nYUJo6pxkVbnrEMHgcfKwhNLqAqkEkE+TiMy3UYgnVd1WpdIk",
-	"q/PJVcjwCLZy575ZuAhwClKSGBpcscanPXm5vpWnvucAmE7Nvg/nvT9Pbnrj8Yfr0RkO8N34fDTpXY3O",
-	"e2d/m5z/dTC+HeMAD4a/9K4GZ5P+6PzsfHg76F2N87XD69vJxfXd0Gzu94bm8fLu/WR8fnVh/nN9fXV2",
-	"/WE46fVvB7+c26PGdxcXg/7gfHg7ede76g375t8fRtfD90tG7hvw/B5Y5IJPznxKEiP0FOyPpj2Xzj9r",
-	"VhBAFEQToip+FBEFB4qm0ORMO3nqizh0zeB2Sbu7LkVsgsKljnsmKVE1HyhIm4Da6mBGQ1KRNNtWefVE",
-	"UOwPPJkWDi8AohbunmzAuMDQOhf0SNvV7G6xySyMpNCYPl8s1Pv1a4jvhJ+aKE0UNoLsCkgE4oETEZ0z",
-	"JeardpzpWE4MKdYMNfveU46alwjCPjVqWnFFEpOL5HMrB7d2O60uy4qSnkqsBGWZ6wJ6aZp0eefLrqr+",
-	"dkXztmjiSSVH2JItwCRKKWuMsjuirgwrnkCrwFdUquYA8MKC70vAG8GnNGmogtYWMLsK/w28bEv9pVpp",
-	"kqyj5Vesp+YXWbfZ0etbLbhNOHiGhTf4dSUCtDi5KU0h1IKq+djY0LcogAgQ5rZmcWGfLnI7/OnDLfa3",
-	"Olsh27dLw8yUyty9kPoLTPV+eJMQZWyKplygmY5jymLE1QwEMvJJ9EjVDIniTisD5IEZIMIiZAQxAimq",
-	"jNZNzpaISETQGMQXGgLq3QxwgL+AkI7i0WH3sGvUzTNgJKP4FJ8cdg9PcIAzomZW4o6NM53M6N66uk3y",
-	"xjvs5XgQ4VP8HlTPrLoxi4JqU+e4293pal31PAmhALUZBX5dgxlXruFGGSAQlYgkvg/wpnvU5r+FLJ3q",
-	"9d1sOtm8adnhKQMKn36sQuljHs0X9wGWOk2Jyc/un8ioHv2oQCrzwzDxkz2tY352Eh5Tq8KMywbTXNnX",
-	"Tlkg1TsezXcyB4kial6R5KZkmClJJAQ1W2VEykcubBRJyb+ugMVGtqPjtwFOKSueN2Ss0taT4w07G9K9",
-	"DwMFM82QWO5SQsPimZhdF/grnZ0GOFoDIanDEKSc6sSEK1upWU7GoA76nH+isBovRjAVIGfItnJQ6FYF",
-	"JbbqylpY1HY3o7bUiH2adyzKKHYQrCCWa1WGbFWufgJESKRmgC6Vyq5ZMkfCyTopy3qIg1Wwm5O/aQTa",
-	"+srfftdvNHoMEeJalSyfzLe3vdVRrpVdEFC3jGHBJI+w/cCl5fzrdtPdSdjCcEhxRKXUgAhi8IiI1YAj",
-	"eoiGHPU8lKyFkFMJynV9+A+2YnjvCre+qZkRQVJQVo8fv2Lq+u5eOy7O4ApjuB4R1inx/pviq62329iv",
-	"3QZbw5pGnaqjHeIKV+Ye+RR0PT9Y5EGtIoGWJvNtBGdMpfL3ssZcOPIr7twFag8pcde7QTmF1opD/wal",
-	"Wir0AOjtwdHxWxTOiCChQXqAjACEMkQUSoBIhTgDlIBSIAL7O6IxVa5WNI8yg5CSZHkGDtbl7bcb8vZK",
-	"JLBvCn5PDk6OK+xKRYRyNS0p2LShyMvBTfxwL2SAmE4f7A+zRBuFyZALkFWmaxXDiS1kFQjD0j8/koPf",
-	"egd/v/d/uwc/T+7//we8v6riaG9VhVE/yj0Coidmmf1VGD9v3lKMaOsBwwnpc4nOh12d0qW97dKSz7he",
-	"sPzLSbTZKOfy6aGz/U5RbRRVrxbvQaFQCwFMWZ0tGTG6iwhN5gfCDofa42k/ITQtjZFeUo9N06oGndpl",
-	"yDGO8qHVk294x1vAsj7UfoZNrD5RVBLBWWOmY9khfkCwDs+lOcJzbUEVpHKTUepzi0URFYkQZN5koEuu",
-	"RTJHMx0jO22QttthSsbEpKzjN2jGtZCv4g+GqVzNzWyhWHCdQYQe5vYfJfvkE9nOV0NmEC3WGSqfZLfU",
-	"qhlRs2Wl6s5bW6JumlXdv6BnVqbyDRbP3yPb9dq3XfszCD8tv/2QiijtMEdc3MsIXWvGjs5iQdyUtjkM",
-	"3rkF/5U29crxMXZfrYWnQcHbCf0oINIh/LRExcPcFMMsMreMSh60kJiC64yvibryAuwNq8nwnzWI+dLy",
-	"tnVbKaIimBKdKHz6h66tZWmqU3x61O3aUtY/BatfRtzvKcQXg98twvsIQlNRGL0hq7fXiONihYnCljMq",
-	"FRebkuilX/U7VPCljlEuxGvlSE/fRtFyDVnSczkJNkfNMbDoUsevFy2/3WXMiNFiKml0U7l87S1Qmk1v",
-	"Nm8qvgV9hYLXYAARiynFfUJ2IEqWHyus89XSNw3Pjr7Hu0XfoJkAn04ltFAoH9l9rYC+8hnIFkGntAcB",
-	"U4LC6xToZVRYmNSmkvVcpLRgEhEkaZolgHKmDNhCWxfSqa3xZW0kGKwi7QVGm7YU3WK06dY9abRZ6ZQY",
-	"ERCwKOOUuS5Kx86VO+naJknfRfiiafpCJaf/Snm11Cw3KZ5xhdg5HH7D3opju6zwTrnTm+mm5sqMsBjy",
-	"tu9+2tUMHiffWwuaJ9HkyZPnmqtVzgqq6tjHHHkPk8fCiKHF13dxcXOuUHWpwi5Vt5KgFGXuq6JGt7rL",
-	"IqLABJtxvvR3OAlavPJHC23BONcZ0laN38m137BaRU8BkxJ6JBARzloz4di+NoqR25WanytFYCks/fFN",
-	"Qxz6X7najsTiw9NtSlVqss4UpUSFM1PwWOPuHXQOLf67vYc5KmaIJcAVHcZs+d1pWxFW/jz1P6C/WBan",
-	"bTLmteImxKYIlt9H5afbmHfnmgrdmU2LBJ/iDslo58sRXtwv/h0AAP//D0LTSB07AAA=",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

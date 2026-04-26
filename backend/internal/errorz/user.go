@@ -7,4 +7,6 @@ var (
 	ErrUserNotFound       = errors.New("user not found")
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrWrongPassword      = errors.New("wrong password")
+	ErrUserBanned         = errors.New("user is banned")
+	ErrCannotBanAdmin     = errors.New("cannot ban admin")
 )

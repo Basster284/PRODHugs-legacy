@@ -79,3 +79,44 @@ RETURNING *;
 UPDATE users
 SET password = $2
 WHERE id = $1;
+
+-- name: BanUser :one
+UPDATE users
+SET banned_at = NOW()
+WHERE id = $1 AND role != 'admin'
+RETURNING *;
+
+-- name: UnbanUser :one
+UPDATE users
+SET banned_at = NULL
+WHERE id = $1
+RETURNING *;
+
+-- name: CountUsers :one
+SELECT COUNT(*) FROM users;
+
+-- name: CountBannedUsers :one
+SELECT COUNT(*) FROM users WHERE banned_at IS NOT NULL;
+
+-- name: ListUsersAdmin :many
+SELECT id, username, role, gender, banned_at
+FROM users
+ORDER BY username
+LIMIT @lim::int OFFSET @off::int;
+
+-- name: AdminUpdateUsername :one
+UPDATE users
+SET username = $2
+WHERE id = $1
+RETURNING *;
+
+-- name: AdminUpdateGender :one
+UPDATE users
+SET gender = $2
+WHERE id = $1
+RETURNING *;
+
+-- name: AdminUpdatePassword :exec
+UPDATE users
+SET password = $2
+WHERE id = $1;

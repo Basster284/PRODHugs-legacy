@@ -24,6 +24,10 @@ func (s *service) Login(ctx context.Context, username string, password string) (
 		return nil, "", "", errorz.ErrInvalidCredentials
 	}
 
+	if u.BannedAt != nil {
+		return nil, "", "", errorz.ErrUserBanned
+	}
+
 	accessToken, _, err := s.jwtManager.GenerateAccessToken(u.ID, u.Role)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("failed to generate access token: %w", err)

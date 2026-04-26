@@ -13,6 +13,14 @@ type repo interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
 	UpdateSettings(ctx context.Context, id uuid.UUID, gender *string) (*models.User, error)
 	UpdatePassword(ctx context.Context, id uuid.UUID, hashedPassword string) error
+	BanUser(ctx context.Context, id uuid.UUID) (*models.User, error)
+	UnbanUser(ctx context.Context, id uuid.UUID) (*models.User, error)
+	CountUsers(ctx context.Context) (int64, error)
+	CountBannedUsers(ctx context.Context) (int64, error)
+	ListUsersAdmin(ctx context.Context, limit, offset int32) ([]*models.AdminUser, error)
+	AdminUpdateUsername(ctx context.Context, id uuid.UUID, username string) (*models.User, error)
+	AdminUpdateGender(ctx context.Context, id uuid.UUID, gender *string) (*models.User, error)
+	AdminUpdatePassword(ctx context.Context, id uuid.UUID, hashedPassword string) error
 }
 
 type jwtManager interface {

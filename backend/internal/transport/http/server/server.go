@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"go-service-template/internal/transport/http/v1"
+	"go-service-template/internal/transport/http/v1/admin"
 	"go-service-template/internal/transport/http/v1/hug"
 	"go-service-template/internal/transport/http/v1/user"
 )
@@ -10,12 +11,14 @@ import (
 type Server struct {
 	*user.UserHandler
 	*hug.HugHandler
+	*admin.AdminHandler
 }
 
-func New(u *user.UserHandler, h *hug.HugHandler) *Server {
+func New(u *user.UserHandler, h *hug.HugHandler, a *admin.AdminHandler) *Server {
 	return &Server{
-		UserHandler: u,
-		HugHandler:  h,
+		UserHandler:  u,
+		HugHandler:   h,
+		AdminHandler: a,
 	}
 }
 

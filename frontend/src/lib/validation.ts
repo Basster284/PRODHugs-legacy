@@ -121,6 +121,11 @@ const HANDLER_ERROR_MAP: Record<string, { field: string | null; message: string 
   USER_ALREADY_EXISTS: { field: 'username', message: 'Пользователь с таким именем уже существует' },
   INVALID_CREDENTIALS: { field: null, message: 'Неверное имя пользователя или пароль' },
   WRONG_PASSWORD: { field: 'oldPassword', message: 'Неверный текущий пароль' },
+  USER_BANNED: {
+    field: null,
+    message: 'Ваш аккаунт заблокирован. Обратитесь к администратору.',
+  },
+  CANNOT_BAN_ADMIN: { field: null, message: 'Невозможно заблокировать администратора' },
 }
 
 export interface ParsedBackendError {
