@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Heart } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { validateRegisterForm, parseBackendError, type FieldError } from '@/lib/validation'
 import { Button } from '@/components/ui/button'
@@ -59,9 +58,7 @@ async function handleRegister() {
   <div class="flex min-h-screen items-center justify-center bg-background p-4">
     <Card class="w-full max-w-sm">
       <CardHeader class="text-center">
-        <div class="mx-auto mb-2 flex size-10 items-center justify-center rounded-lg bg-prod-yellow text-prod-yellow-foreground">
-          <Heart class="size-5" />
-        </div>
+        <img src="/logo.webp" alt="PROD" class="mx-auto mb-2 size-12 rounded-lg object-contain" />
         <CardTitle class="text-xl">Регистрация</CardTitle>
         <CardDescription>Создай аккаунт в PRODнимашках</CardDescription>
       </CardHeader>

@@ -6,7 +6,6 @@ import {
   Users,
   Newspaper,
   Trophy,
-  Heart,
 } from 'lucide-vue-next'
 import {
   Sidebar,
@@ -37,9 +36,7 @@ const currentPath = computed(() => route.path)
   <Sidebar collapsible="icon">
     <SidebarHeader class="p-4 group-data-[collapsible=icon]:p-2">
       <div class="flex items-center gap-2 overflow-hidden">
-        <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-prod-yellow text-prod-yellow-foreground">
-          <Heart class="size-4" />
-        </div>
+        <img src="/logo.webp" alt="PROD" class="size-10 shrink-0 rounded-lg object-contain" />
         <span class="truncate font-semibold text-foreground"><span class="font-bold">PROD</span>нимашки</span>
       </div>
     </SidebarHeader>
