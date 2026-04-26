@@ -6,7 +6,6 @@ import {
   Users,
   Newspaper,
   Trophy,
-  UserCircle,
   Heart,
 } from 'lucide-vue-next'
 import {
@@ -29,7 +28,6 @@ const items = [
   { title: 'Пользователи', url: '/users', icon: Users },
   { title: 'Лента', url: '/feed', icon: Newspaper },
   { title: 'Рейтинг', url: '/leaderboard', icon: Trophy },
-  { title: 'Мой профиль', url: '/profile', icon: UserCircle },
 ]
 
 const currentPath = computed(() => route.path)

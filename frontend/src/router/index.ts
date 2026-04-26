@@ -45,9 +45,7 @@ const router = createRouter({
     },
     {
       path: '/profile',
-      name: 'profile',
-      component: () => import('@/views/MyProfileView.vue'),
-      meta: { auth: true },
+      redirect: '/dashboard',
     },
     {
       path: '/feed',

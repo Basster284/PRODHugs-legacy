@@ -45,10 +45,6 @@ onMounted(() => {
         <DropdownMenuContent align="end" class="w-48">
           <DropdownMenuLabel>{{ auth.user?.username }}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem as-child>
-            <RouterLink to="/profile">Мой профиль</RouterLink>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem @click="auth.logout()" class="text-destructive">
             <LogOut class="size-4" />
             Выйти

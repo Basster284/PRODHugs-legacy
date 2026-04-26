@@ -3,9 +3,10 @@ import { ref, onMounted } from 'vue'
 import { Heart, ArrowUp, ArrowDown, Gift, Coins, Users, Trophy, Newspaper } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { useAuthStore } from '@/stores/auth'
-import { useHugsStore, type DailyRewardResponse, type UserProfile } from '@/stores/hugs'
+import { useHugsStore, type DailyRewardResponse, type UserProfile, type HugFeedItem } from '@/stores/hugs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import RankBadge from '@/components/RankBadge.vue'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -15,6 +16,7 @@ const auth = useAuthStore()
 const hugs = useHugsStore()
 
 const profile = ref<UserProfile | null>(null)
+const history = ref<HugFeedItem[]>([])
 const dailyResult = ref<DailyRewardResponse | null>(null)
 const claimingDaily = ref(false)
 const loading = ref(true)
@@ -41,10 +43,24 @@ function getRankProgress(totalHugs: number) {
 onMounted(async () => {
   await hugs.fetchBalance()
   if (auth.user) {
-    profile.value = await hugs.getUserProfile(auth.user.id)
+    const [p, h] = await Promise.all([
+      hugs.getUserProfile(auth.user.id),
+      hugs.getHugHistory(),
+    ])
+    profile.value = p
+    history.value = h
   }
   loading.value = false
 })
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleString('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 async function claimDaily() {
   claimingDaily.value = true
@@ -161,6 +177,47 @@ const rankInfo = () => getRankProgress(profile.value?.total_hugs ?? 0)
         </CardContent>
       </Card>
     </div>
+
+    <!-- Hug history -->
+    <Card>
+      <CardHeader>
+        <CardTitle class="text-base">История обнимашек</CardTitle>
+        <CardDescription>Последние обнимашки</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div v-if="loading" class="space-y-3">
+          <Skeleton v-for="i in 3" :key="i" class="h-8 w-full rounded" />
+        </div>
+        <div v-else-if="history.length === 0" class="py-6 text-center text-sm text-muted-foreground">
+          Пока нет обнимашек
+        </div>
+        <div v-else class="space-y-1 max-h-96 overflow-y-auto">
+          <div
+            v-for="(hug, i) in history"
+            :key="hug.id"
+          >
+            <Separator v-if="i > 0" class="my-1" />
+            <div class="flex items-center justify-between py-2">
+              <div class="flex items-center gap-2 text-sm">
+                <ArrowUp v-if="hug.giver_id === auth.user?.id" class="size-3.5 text-muted-foreground" />
+                <ArrowDown v-else class="size-3.5 text-muted-foreground" />
+                <span v-if="hug.giver_id === auth.user?.id" class="text-muted-foreground">
+                  Ты обнял(а)
+                  <RouterLink :to="`/user/${hug.receiver_id}`" class="text-foreground font-medium hover:underline">{{ hug.receiver_username }}</RouterLink>
+                </span>
+                <span v-else class="text-muted-foreground">
+                  <RouterLink :to="`/user/${hug.giver_id}`" class="text-foreground font-medium hover:underline">{{ hug.giver_username }}</RouterLink>
+                  обнял(а) тебя
+                </span>
+              </div>
+              <span class="text-xs text-muted-foreground tabular-nums">
+                {{ formatDate(hug.created_at) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
 
     <!-- Quick links -->
     <div class="grid gap-4 sm:grid-cols-3">
