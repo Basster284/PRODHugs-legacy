@@ -25,11 +25,11 @@ interface Particle {
 const particles = ref<Particle[]>([])
 
 const COLORS = [
-  'oklch(0.65 0.25 0)',
-  'oklch(0.70 0.22 15)',
-  'oklch(0.60 0.28 350)',
-  'oklch(0.75 0.18 30)',
-  'oklch(0.55 0.22 340)',
+  '#ffdd2d',
+  '#fff705',
+  '#efc800',
+  '#ffe566',
+  '#ffd000',
 ]
 
 function rand(min: number, max: number) {

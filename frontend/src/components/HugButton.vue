@@ -92,7 +92,8 @@ onUnmounted(() => {
       @click="sendHug"
       :disabled="loading || remaining > 0"
       :size="size ?? 'default'"
-      :variant="remaining > 0 ? 'secondary' : 'default'"
+      :variant="remaining > 0 ? 'secondary' : 'yellow'"
+      class="rounded-[21px]"
       :class="[animating ? 'hug-animate' : '']"
     >
       <Loader2 v-if="loading" class="size-4 animate-spin" />

@@ -29,7 +29,7 @@ onMounted(() => {
   <div class="flex flex-1 items-center justify-between">
     <div />
     <div class="flex items-center gap-3">
-      <Badge variant="secondary" class="gap-1.5 font-mono tabular-nums">
+      <Badge variant="secondary" class="gap-1.5 font-mono tabular-nums bg-prod-yellow/15 text-prod-yellow border-prod-yellow/20">
         <Coins class="size-3.5" />
         {{ hugs.balance?.amount ?? 0 }}
       </Badge>

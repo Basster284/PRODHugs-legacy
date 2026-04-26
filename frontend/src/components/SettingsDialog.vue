@@ -130,8 +130,9 @@ async function savePassword() {
             </div>
           </RadioGroup>
           <Button
-            variant="outline"
+            variant="yellow"
             size="sm"
+            class="rounded-[21px]"
             :disabled="savingGender"
             @click="saveGender"
           >
@@ -206,8 +207,9 @@ async function savePassword() {
             {{ passwordServerError }}
           </p>
           <Button
-            variant="outline"
+            variant="yellow"
             size="sm"
+            class="rounded-[21px]"
             :disabled="savingPassword"
             @click="savePassword"
           >

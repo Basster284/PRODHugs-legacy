@@ -125,7 +125,7 @@ onMounted(load)
         <Card>
           <CardHeader class="flex flex-row items-center justify-between pb-2">
             <CardDescription>Всего</CardDescription>
-            <Heart class="size-4 text-muted-foreground" />
+            <Heart class="size-4 text-prod-yellow" />
           </CardHeader>
           <CardContent>
             <div class="text-2xl font-bold tabular-nums" :class="animatingStats.total && 'stat-pop'">
@@ -177,8 +177,9 @@ onMounted(load)
             <Button
               @click="upgrade"
               :disabled="upgrading || cooldown.cooldown_seconds <= 300"
-              variant="outline"
+              variant="yellow"
               size="sm"
+              class="rounded-[21px]"
             >
               <ArrowUpCircle class="size-4" />
               {{ cooldown.cooldown_seconds <= 300 ? 'Максимум' : 'Улучшить' }}

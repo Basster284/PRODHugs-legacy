@@ -35,7 +35,7 @@ onMounted(() => {
       Пока нет данных
     </div>
 
-    <div v-else class="rounded-md border">
+    <div v-else class="rounded-[10px] border border-[#75988e33]">
       <Table>
         <TableHeader>
           <TableRow>
@@ -51,10 +51,10 @@ onMounted(() => {
           <TableRow
             v-for="(entry, index) in hugsStore.leaderboard"
             :key="entry.user_id"
-            class="cursor-pointer"
+            class="cursor-pointer hover:bg-[#002D20]"
             @click="$router.push(`/user/${entry.user_id}`)"
           >
-            <TableCell class="font-medium tabular-nums">
+            <TableCell class="font-medium tabular-nums" :class="index === 0 ? 'text-prod-yellow' : ''">
               {{ index + 1 }}
             </TableCell>
             <TableCell>
@@ -70,7 +70,7 @@ onMounted(() => {
             <TableCell>
               <RankBadge :rank="entry.rank" />
             </TableCell>
-            <TableCell class="text-right font-bold tabular-nums">
+            <TableCell class="text-right font-bold tabular-nums" :class="index === 0 ? 'text-prod-yellow' : ''">
               {{ entry.total_hugs }}
             </TableCell>
             <TableCell class="text-right tabular-nums text-muted-foreground">

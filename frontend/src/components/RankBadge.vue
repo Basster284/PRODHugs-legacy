@@ -7,12 +7,12 @@ const props = defineProps<{
 }>()
 
 const rankStyles: Record<string, string> = {
-  'Новичок': 'bg-zinc-500/15 text-zinc-400 border-zinc-500/20',
-  'Обнимашка': 'bg-blue-500/15 text-blue-400 border-blue-500/20',
-  'Дружелюбный': 'bg-green-500/15 text-green-400 border-green-500/20',
-  'Мастер обнимашек': 'bg-purple-500/15 text-purple-400 border-purple-500/20',
-  'Легенда': 'bg-amber-500/15 text-amber-400 border-amber-500/20',
-  'Бог обнимашек': 'bg-red-500/15 text-red-400 border-red-500/20',
+  'Новичок': 'bg-[#b2c6c0]/15 text-[#b2c6c0] border-[#b2c6c0]/20',
+  'Обнимашка': 'bg-teal-400/15 text-teal-300 border-teal-400/20',
+  'Дружелюбный': 'bg-emerald-400/15 text-emerald-300 border-emerald-400/20',
+  'Мастер обнимашек': 'bg-cyan-400/15 text-cyan-300 border-cyan-400/20',
+  'Легенда': 'bg-prod-yellow/15 text-prod-yellow border-prod-yellow/20',
+  'Бог обнимашек': 'bg-amber-400/15 text-amber-300 border-amber-400/20',
 }
 
 const style = computed(() => rankStyles[props.rank] ?? rankStyles['Новичок']!)

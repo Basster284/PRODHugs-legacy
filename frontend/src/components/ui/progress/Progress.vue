@@ -24,14 +24,14 @@ const delegatedProps = reactiveOmit(props, 'class')
     v-bind="delegatedProps"
     :class="
       cn(
-        'bg-muted h-1 rounded-full relative flex w-full items-center overflow-x-hidden',
+        'bg-[#003727] h-2 rounded-full relative flex w-full items-center overflow-x-hidden',
         props.class,
       )
     "
   >
     <ProgressIndicator
       data-slot="progress-indicator"
-      class="bg-primary size-full flex-1 transition-all"
+      class="bg-prod-yellow size-full flex-1 transition-all"
       :style="`transform: translateX(-${100 - (props.modelValue ?? 0)}%);`"
     />
   </ProgressRoot>

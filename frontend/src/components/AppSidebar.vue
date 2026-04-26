@@ -37,15 +37,15 @@ const currentPath = computed(() => route.path)
   <Sidebar collapsible="icon">
     <SidebarHeader class="p-4 group-data-[collapsible=icon]:p-2">
       <div class="flex items-center gap-2 overflow-hidden">
-        <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-prod-yellow text-prod-yellow-foreground">
           <Heart class="size-4" />
         </div>
-        <span class="truncate font-semibold">Hugs</span>
+        <span class="truncate font-semibold text-foreground"><span class="font-bold">PROD</span>нимашки</span>
       </div>
     </SidebarHeader>
     <SidebarContent>
       <SidebarGroup>
-        <SidebarGroupLabel>Навигация</SidebarGroupLabel>
+        <SidebarGroupLabel class="text-muted-foreground">Навигация</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem v-for="item in items" :key="item.title">
@@ -55,7 +55,7 @@ const currentPath = computed(() => route.path)
               >
                 <RouterLink :to="item.url">
                   <component :is="item.icon" />
-                  <span>{{ item.title }}</span>
+                  <span>[{{ item.title }}]</span>
                 </RouterLink>
               </SidebarMenuButton>
             </SidebarMenuItem>

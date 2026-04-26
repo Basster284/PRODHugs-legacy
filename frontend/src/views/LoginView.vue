@@ -59,11 +59,11 @@ async function handleLogin() {
   <div class="flex min-h-screen items-center justify-center bg-background p-4">
     <Card class="w-full max-w-sm">
       <CardHeader class="text-center">
-        <div class="mx-auto mb-2 flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <div class="mx-auto mb-2 flex size-10 items-center justify-center rounded-lg bg-prod-yellow text-prod-yellow-foreground">
           <Heart class="size-5" />
         </div>
         <CardTitle class="text-xl">Вход</CardTitle>
-        <CardDescription>Войдите в свой аккаунт Hugs as a Service</CardDescription>
+        <CardDescription>Войдите в свой аккаунт PROD Hugs</CardDescription>
       </CardHeader>
       <CardContent>
         <form @submit.prevent="handleLogin" class="grid gap-4">
@@ -98,7 +98,7 @@ async function handleLogin() {
           <p v-if="serverError" class="text-sm text-destructive text-center">
             {{ serverError }}
           </p>
-          <Button type="submit" class="w-full" :disabled="auth.loading">
+          <Button type="submit" variant="yellow" class="w-full rounded-[21px]" :disabled="auth.loading">
             {{ auth.loading ? 'Вход...' : 'Войти' }}
           </Button>
         </form>

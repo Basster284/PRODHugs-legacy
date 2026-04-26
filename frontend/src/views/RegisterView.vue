@@ -59,11 +59,11 @@ async function handleRegister() {
   <div class="flex min-h-screen items-center justify-center bg-background p-4">
     <Card class="w-full max-w-sm">
       <CardHeader class="text-center">
-        <div class="mx-auto mb-2 flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <div class="mx-auto mb-2 flex size-10 items-center justify-center rounded-lg bg-prod-yellow text-prod-yellow-foreground">
           <Heart class="size-5" />
         </div>
         <CardTitle class="text-xl">Регистрация</CardTitle>
-        <CardDescription>Создайте аккаунт в Hugs as a Service</CardDescription>
+        <CardDescription>Создайте аккаунт в PROD Hugs</CardDescription>
       </CardHeader>
       <CardContent>
         <form @submit.prevent="handleRegister" class="grid gap-4">
@@ -125,7 +125,7 @@ async function handleRegister() {
           <p v-if="serverError" class="text-sm text-destructive text-center">
             {{ serverError }}
           </p>
-          <Button type="submit" class="w-full" :disabled="auth.loading">
+          <Button type="submit" variant="yellow" class="w-full rounded-[21px]" :disabled="auth.loading">
             {{ auth.loading ? 'Регистрация...' : 'Зарегистрироваться' }}
           </Button>
         </form>

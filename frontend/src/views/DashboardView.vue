@@ -96,7 +96,7 @@ const rankInfo = () => getRankProgress(profile.value?.total_hugs ?? 0)
   <div class="mx-auto max-w-4xl space-y-6">
     <div>
       <h1 class="text-2xl font-semibold tracking-tight">
-        Привет, {{ auth.user?.username }}
+        Привет, <span class="text-prod-yellow">{{ auth.user?.username }}</span>
       </h1>
       <p class="text-muted-foreground">Ваша панель управления обнимашками</p>
     </div>
@@ -106,7 +106,7 @@ const rankInfo = () => getRankProgress(profile.value?.total_hugs ?? 0)
       <Card v-if="!loading">
         <CardHeader class="flex flex-row items-center justify-between pb-2">
           <CardDescription>Всего обнимашек</CardDescription>
-          <Heart class="size-4 text-muted-foreground" />
+          <Heart class="size-4 text-prod-yellow" />
         </CardHeader>
         <CardContent>
           <div class="text-2xl font-bold">{{ profile?.total_hugs ?? 0 }}</div>
@@ -177,11 +177,11 @@ const rankInfo = () => getRankProgress(profile.value?.total_hugs ?? 0)
             <p v-if="dailyResult.already_claimed" class="text-muted-foreground">
               Уже получено сегодня. Серия: {{ dailyResult.streak_days }} дн.
             </p>
-            <p v-else class="text-green-400">
+            <p v-else class="text-prod-yellow">
               +{{ plural(dailyResult.amount, 'монета', 'монеты', 'монет') }}! Серия: {{ dailyResult.streak_days }} дн.
             </p>
           </div>
-          <Button @click="claimDaily" :disabled="claimingDaily" variant="outline" class="w-full">
+          <Button @click="claimDaily" :disabled="claimingDaily" variant="yellow" class="w-full rounded-[21px]">
             <Gift class="size-4" />
             {{ claimingDaily ? 'Загрузка...' : 'Забрать награду' }}
           </Button>
@@ -233,9 +233,9 @@ const rankInfo = () => getRankProgress(profile.value?.total_hugs ?? 0)
     <!-- Quick links -->
     <div class="grid gap-4 sm:grid-cols-3">
       <RouterLink to="/users">
-        <Card class="transition-colors hover:bg-accent/50 h-full">
+        <Card class="transition-colors hover:bg-[#002D20] h-full">
           <CardHeader class="flex flex-row items-center gap-3">
-            <Users class="size-5 text-muted-foreground" />
+            <Users class="size-5 text-prod-yellow" />
             <div>
               <CardTitle class="text-sm">Пользователи</CardTitle>
               <CardDescription>Найти и обнять</CardDescription>
@@ -244,9 +244,9 @@ const rankInfo = () => getRankProgress(profile.value?.total_hugs ?? 0)
         </Card>
       </RouterLink>
       <RouterLink to="/feed">
-        <Card class="transition-colors hover:bg-accent/50 h-full">
+        <Card class="transition-colors hover:bg-[#002D20] h-full">
           <CardHeader class="flex flex-row items-center gap-3">
-            <Newspaper class="size-5 text-muted-foreground" />
+            <Newspaper class="size-5 text-prod-yellow" />
             <div>
               <CardTitle class="text-sm">Лента</CardTitle>
               <CardDescription>Обнимашки в реальном времени</CardDescription>
@@ -255,9 +255,9 @@ const rankInfo = () => getRankProgress(profile.value?.total_hugs ?? 0)
         </Card>
       </RouterLink>
       <RouterLink to="/leaderboard">
-        <Card class="transition-colors hover:bg-accent/50 h-full">
+        <Card class="transition-colors hover:bg-[#002D20] h-full">
           <CardHeader class="flex flex-row items-center gap-3">
-            <Trophy class="size-5 text-muted-foreground" />
+            <Trophy class="size-5 text-prod-yellow" />
             <div>
               <CardTitle class="text-sm">Рейтинг</CardTitle>
               <CardDescription>Топ пользователей</CardDescription>

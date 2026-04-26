@@ -41,7 +41,7 @@ const chartLoading = ref(true)
 const chartConfig = {
   count: {
     label: 'Обнимашки',
-    color: 'oklch(0.65 0.25 0)',
+    color: '#ffdd2d',
   },
 } satisfies ChartConfig
 
@@ -172,7 +172,7 @@ onUnmounted(() => {
         <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Лента</h1>
         <p class="text-xs text-muted-foreground sm:text-sm">Обнимашки в реальном времени</p>
       </div>
-      <Badge :variant="connected ? 'secondary' : 'destructive'" class="shrink-0 gap-1.5">
+      <Badge :variant="connected ? 'secondary' : 'destructive'" class="shrink-0 gap-1.5" :class="connected ? 'bg-prod-yellow/15 text-prod-yellow border-prod-yellow/20' : ''">
         <Wifi v-if="connected" class="size-3" />
         <WifiOff v-else class="size-3" />
         <span class="hidden xs:inline">{{ connected ? 'Подключено' : 'Отключено' }}</span>
@@ -248,8 +248,8 @@ onUnmounted(() => {
       <Transition name="indicator">
         <button
           v-if="pendingCount > 0"
-          class="sticky top-2 z-20 mx-auto flex items-center gap-1.5 rounded-full border border-border/60
-                 bg-card/90 px-3 py-2 text-xs font-medium text-primary shadow-lg backdrop-blur-sm
+          class="sticky top-2 z-20 mx-auto flex items-center gap-1.5 rounded-full border border-prod-yellow/30
+                 bg-card/90 px-3 py-2 text-xs font-medium text-prod-yellow shadow-lg backdrop-blur-sm
                  transition-all hover:bg-card hover:shadow-xl active:scale-95 cursor-pointer
                  sm:px-4 sm:py-1.5 sm:text-sm"
           @click="flushPending"
