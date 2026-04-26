@@ -31,23 +31,31 @@ func (s *service) GetUserStats(ctx context.Context, userID uuid.UUID) (*models.U
 	return s.hugRepo.GetUserStats(ctx, userID)
 }
 
-func (s *service) GetUserProfile(ctx context.Context, userID uuid.UUID) (*models.User, *models.UserStats, *models.Balance, error) {
+func (s *service) GetUserProfile(ctx context.Context, userID uuid.UUID, viewerID *uuid.UUID) (*models.User, *models.UserStats, *models.Balance, *models.MutualHugStats, error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	stats, err := s.hugRepo.GetUserStats(ctx, userID)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	balance, err := s.balanceRepo.GetBalance(ctx, userID)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
-	return user, stats, balance, nil
+	var mutual *models.MutualHugStats
+	if viewerID != nil && *viewerID != userID {
+		mutual, err = s.hugRepo.CountMutualHugs(ctx, userID, *viewerID)
+		if err != nil {
+			return nil, nil, nil, nil, err
+		}
+	}
+
+	return user, stats, balance, mutual, nil
 }
 
 func (s *service) SearchUsers(ctx context.Context, query string, limit, offset int32) ([]*models.User, error) {

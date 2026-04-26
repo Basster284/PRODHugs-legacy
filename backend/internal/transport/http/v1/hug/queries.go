@@ -147,7 +147,13 @@ func (h *HugHandler) GetLeaderboard(ctx context.Context, req v1.GetLeaderboardRe
 }
 
 func (h *HugHandler) GetUserProfile(ctx context.Context, req v1.GetUserProfileRequestObject) (v1.GetUserProfileResponseObject, error) {
-	user, stats, bal, err := h.svc.GetUserProfile(ctx, req.UserId)
+	viewerID, _ := ctx.Value(middleware.UserIDContextKey).(uuid.UUID)
+	var viewerPtr *uuid.UUID
+	if viewerID != uuid.Nil {
+		viewerPtr = &viewerID
+	}
+
+	user, stats, bal, mutual, err := h.svc.GetUserProfile(ctx, req.UserId, viewerPtr)
 	if err != nil {
 		if errors.Is(err, errorz.ErrUserNotFound) {
 			return v1.GetUserProfile404JSONResponse{
@@ -174,6 +180,14 @@ func (h *HugHandler) GetUserProfile(ctx context.Context, req v1.GetUserProfileRe
 	if user.Gender != nil {
 		g := v1.Gender(*user.Gender)
 		resp.Gender = &g
+	}
+	if mutual != nil {
+		mt := int(mutual.Total)
+		mg := int(mutual.Given)
+		mr := int(mutual.Received)
+		resp.MutualTotal = &mt
+		resp.MutualGiven = &mg
+		resp.MutualReceived = &mr
 	}
 	return resp, nil
 }

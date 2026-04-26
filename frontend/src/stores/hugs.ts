@@ -31,6 +31,9 @@ export interface UserProfile {
   total_hugs: number
   rank: string
   balance?: number
+  mutual_total?: number
+  mutual_given?: number
+  mutual_received?: number
 }
 
 export interface CooldownInfo {

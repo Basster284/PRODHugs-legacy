@@ -17,6 +17,7 @@ type hugRepo interface {
 	GetHugActivity(ctx context.Context) ([]*models.HugActivityItem, error)
 	GetLeaderboard(ctx context.Context, limit, offset int32) ([]*models.LeaderboardEntry, error)
 	GetUserStats(ctx context.Context, userID uuid.UUID) (*models.UserStats, error)
+	CountMutualHugs(ctx context.Context, userA, userB uuid.UUID) (*models.MutualHugStats, error)
 	SearchUsers(ctx context.Context, query string, limit, offset int32) ([]*models.User, error)
 }
 

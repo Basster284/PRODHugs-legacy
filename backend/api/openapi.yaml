@@ -140,6 +140,9 @@ components:
         total_hugs: { type: integer }
         rank: { type: string }
         balance: { type: integer }
+        mutual_total: { type: integer }
+        mutual_given: { type: integer }
+        mutual_received: { type: integer }
 
     LeaderboardEntry:
       type: object

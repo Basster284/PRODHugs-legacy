@@ -17,7 +17,7 @@ type service interface {
 	GetHugActivity(ctx context.Context) ([]*models.HugActivityItem, error)
 	GetLeaderboard(ctx context.Context, limit, offset int32) ([]*models.LeaderboardEntry, error)
 	GetUserStats(ctx context.Context, userID uuid.UUID) (*models.UserStats, error)
-	GetUserProfile(ctx context.Context, userID uuid.UUID) (*models.User, *models.UserStats, *models.Balance, error)
+	GetUserProfile(ctx context.Context, userID uuid.UUID, viewerID *uuid.UUID) (*models.User, *models.UserStats, *models.Balance, *models.MutualHugStats, error)
 	SearchUsers(ctx context.Context, query string, limit, offset int32) ([]*models.User, error)
 	ClaimDailyReward(ctx context.Context, userID uuid.UUID) (int32, int32, int32, bool, error)
 }

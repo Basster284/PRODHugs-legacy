@@ -33,6 +33,15 @@ SELECT COUNT(*)
 FROM hugs
 WHERE giver_id = $1;
 
+-- name: CountMutualHugs :one
+SELECT
+    COUNT(*)::bigint AS mutual_total,
+    COUNT(*) FILTER (WHERE giver_id = @user_a AND receiver_id = @user_b)::bigint AS mutual_given,
+    COUNT(*) FILTER (WHERE giver_id = @user_b AND receiver_id = @user_a)::bigint AS mutual_received
+FROM hugs
+WHERE (giver_id = @user_a AND receiver_id = @user_b)
+   OR (giver_id = @user_b AND receiver_id = @user_a);
+
 -- name: GetHugActivity :many
 SELECT
     bucket::timestamptz AS bucket_time,

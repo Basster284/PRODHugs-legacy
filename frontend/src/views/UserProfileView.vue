@@ -134,6 +134,9 @@ onMounted(load)
             <div class="text-xl font-bold tabular-nums sm:text-2xl" :class="animatingStats.total && 'stat-pop'">
               {{ profile.total_hugs }}
             </div>
+            <p v-if="!isMe && profile.mutual_total != null" class="mt-1 text-[10px] text-muted-foreground sm:text-xs">
+              {{ profile.mutual_total }} из них с тобой
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -145,6 +148,9 @@ onMounted(load)
             <div class="text-xl font-bold tabular-nums sm:text-2xl" :class="animatingStats.given && 'stat-pop'">
               {{ profile.hugs_given }}
             </div>
+            <p v-if="!isMe && profile.mutual_given != null" class="mt-1 text-[10px] text-muted-foreground sm:text-xs">
+              {{ profile.mutual_given }} из них тебе
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -156,6 +162,9 @@ onMounted(load)
             <div class="text-xl font-bold tabular-nums sm:text-2xl" :class="animatingStats.received && 'stat-pop'">
               {{ profile.hugs_received }}
             </div>
+            <p v-if="!isMe && profile.mutual_received != null" class="mt-1 text-[10px] text-muted-foreground sm:text-xs">
+              {{ profile.mutual_received }} из них от тебя
+            </p>
           </CardContent>
         </Card>
       </div>

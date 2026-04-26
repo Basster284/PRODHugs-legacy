@@ -28,6 +28,12 @@ type HugActivityItem struct {
 	Count     int64
 }
 
+type MutualHugStats struct {
+	Total    int64
+	Given    int64
+	Received int64
+}
+
 type HugCooldown struct {
 	GiverID         uuid.UUID
 	ReceiverID      uuid.UUID

@@ -38,6 +38,34 @@ func (q *Queries) CountHugsReceived(ctx context.Context, receiverID uuid.UUID) (
 	return count, err
 }
 
+const countMutualHugs = `-- name: CountMutualHugs :one
+SELECT
+    COUNT(*)::bigint AS mutual_total,
+    COUNT(*) FILTER (WHERE giver_id = $1 AND receiver_id = $2)::bigint AS mutual_given,
+    COUNT(*) FILTER (WHERE giver_id = $2 AND receiver_id = $1)::bigint AS mutual_received
+FROM hugs
+WHERE (giver_id = $1 AND receiver_id = $2)
+   OR (giver_id = $2 AND receiver_id = $1)
+`
+
+type CountMutualHugsParams struct {
+	UserA uuid.UUID
+	UserB uuid.UUID
+}
+
+type CountMutualHugsRow struct {
+	MutualTotal    int64
+	MutualGiven    int64
+	MutualReceived int64
+}
+
+func (q *Queries) CountMutualHugs(ctx context.Context, arg CountMutualHugsParams) (CountMutualHugsRow, error) {
+	row := q.db.QueryRow(ctx, countMutualHugs, arg.UserA, arg.UserB)
+	var i CountMutualHugsRow
+	err := row.Scan(&i.MutualTotal, &i.MutualGiven, &i.MutualReceived)
+	return i, err
+}
+
 const getHugActivity = `-- name: GetHugActivity :many
 SELECT
     bucket::timestamptz AS bucket_time,

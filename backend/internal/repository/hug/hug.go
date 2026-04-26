@@ -38,6 +38,24 @@ func (r *repo) ListHugsByUser(ctx context.Context, userID uuid.UUID) ([]*models.
 	return result, nil
 }
 
+func (r *repo) CountMutualHugs(ctx context.Context, userA, userB uuid.UUID) (*models.MutualHugStats, error) {
+	q := repository.Queries(ctx, r.q)
+
+	row, err := q.CountMutualHugs(ctx, storage.CountMutualHugsParams{
+		UserA: userA,
+		UserB: userB,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.MutualHugStats{
+		Total:    row.MutualTotal,
+		Given:    row.MutualGiven,
+		Received: row.MutualReceived,
+	}, nil
+}
+
 func (r *repo) CountHugsGiven(ctx context.Context, userID uuid.UUID) (int64, error) {
 	q := repository.Queries(ctx, r.q)
 	return q.CountHugsGiven(ctx, userID)
