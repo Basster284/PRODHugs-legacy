@@ -125,48 +125,33 @@ onMounted(load)
 
       <!-- Stats -->
       <div class="grid grid-cols-3 gap-2 sm:gap-4">
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between px-3 pb-1 pt-3 sm:px-6 sm:pb-2 sm:pt-6">
-            <CardDescription class="text-[11px] sm:text-sm">Всего</CardDescription>
-            <Heart class="hidden size-4 text-prod-yellow sm:block" />
-          </CardHeader>
-          <CardContent class="px-3 pb-3 sm:px-6 sm:pb-6">
-            <div class="text-xl font-bold tabular-nums sm:text-2xl" :class="animatingStats.total && 'stat-pop'">
-              {{ profile.total_hugs }}
-            </div>
-            <p v-if="!isMe && profile.mutual_total != null" class="mt-1 text-[10px] text-muted-foreground sm:text-xs">
-              {{ profile.mutual_total }} из них с тобой
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between px-3 pb-1 pt-3 sm:px-6 sm:pb-2 sm:pt-6">
-            <CardDescription class="text-[11px] sm:text-sm">Отправлено</CardDescription>
-            <ArrowUp class="hidden size-4 text-muted-foreground sm:block" />
-          </CardHeader>
-          <CardContent class="px-3 pb-3 sm:px-6 sm:pb-6">
-            <div class="text-xl font-bold tabular-nums sm:text-2xl" :class="animatingStats.given && 'stat-pop'">
-              {{ profile.hugs_given }}
-            </div>
-            <p v-if="!isMe && profile.mutual_given != null" class="mt-1 text-[10px] text-muted-foreground sm:text-xs">
-              {{ profile.mutual_given }} из них тебе
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between px-3 pb-1 pt-3 sm:px-6 sm:pb-2 sm:pt-6">
-            <CardDescription class="text-[11px] sm:text-sm">Получено</CardDescription>
-            <ArrowDown class="hidden size-4 text-muted-foreground sm:block" />
-          </CardHeader>
-          <CardContent class="px-3 pb-3 sm:px-6 sm:pb-6">
-            <div class="text-xl font-bold tabular-nums sm:text-2xl" :class="animatingStats.received && 'stat-pop'">
-              {{ profile.hugs_received }}
-            </div>
-            <p v-if="!isMe && profile.mutual_received != null" class="mt-1 text-[10px] text-muted-foreground sm:text-xs">
-              {{ profile.mutual_received }} из них от тебя
-            </p>
-          </CardContent>
-        </Card>
+        <div class="rounded-[10px] border bg-card p-2.5 sm:p-4">
+          <p class="text-[11px] text-muted-foreground sm:text-xs">Всего</p>
+          <div class="mt-1 text-xl font-bold tabular-nums sm:text-2xl" :class="animatingStats.total && 'stat-pop'">
+            {{ profile.total_hugs }}
+          </div>
+          <p v-if="!isMe && profile.mutual_total != null" class="mt-0.5 text-[10px] text-muted-foreground sm:text-xs">
+            {{ profile.mutual_total }} из них с тобой
+          </p>
+        </div>
+        <div class="rounded-[10px] border bg-card p-2.5 sm:p-4">
+          <p class="text-[11px] text-muted-foreground sm:text-xs">Отправлено</p>
+          <div class="mt-1 text-xl font-bold tabular-nums sm:text-2xl" :class="animatingStats.given && 'stat-pop'">
+            {{ profile.hugs_given }}
+          </div>
+          <p v-if="!isMe && profile.mutual_given != null" class="mt-0.5 text-[10px] text-muted-foreground sm:text-xs">
+            {{ profile.mutual_given }} из них тебе
+          </p>
+        </div>
+        <div class="rounded-[10px] border bg-card p-2.5 sm:p-4">
+          <p class="text-[11px] text-muted-foreground sm:text-xs">Получено</p>
+          <div class="mt-1 text-xl font-bold tabular-nums sm:text-2xl" :class="animatingStats.received && 'stat-pop'">
+            {{ profile.hugs_received }}
+          </div>
+          <p v-if="!isMe && profile.mutual_received != null" class="mt-0.5 text-[10px] text-muted-foreground sm:text-xs">
+            {{ profile.mutual_received }} из них от тебя
+          </p>
+        </div>
       </div>
 
       <!-- Cooldown upgrade -->
