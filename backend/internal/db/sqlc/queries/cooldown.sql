@@ -19,7 +19,7 @@ WHERE user_a_id = LEAST($1::UUID, $2::UUID)
 RETURNING *;
 
 -- name: SetDeclineCooldown :exec
-INSERT INTO hug_cooldowns (user_a_id, user_b_id, decline_cooldown_until, cooldown_seconds)
-VALUES (LEAST($1::UUID, $2::UUID), GREATEST($1::UUID, $2::UUID), $3, 3600)
+INSERT INTO hug_cooldowns (user_a_id, user_b_id, decline_cooldown_until, cooldown_seconds, last_hug_at)
+VALUES (LEAST($1::UUID, $2::UUID), GREATEST($1::UUID, $2::UUID), $3, 3600, '2000-01-01'::timestamptz)
 ON CONFLICT (user_a_id, user_b_id)
 DO UPDATE SET decline_cooldown_until = $3;

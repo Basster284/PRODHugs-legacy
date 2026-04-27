@@ -62,9 +62,12 @@ function setupGlobalWsListeners() {
   )
 
   wsCleanups.push(
-    ws.on<{ hug_id: string }>('hug_declined', () => {
+    ws.on<{ hug_id: string; receiver_id: string }>('hug_declined', (data) => {
       hugsStore.outgoingHug = null
       toast('Твоя обнимашка была отклонена')
+      if (data.receiver_id) {
+        hugsStore.triggerCooldownRefresh(data.receiver_id)
+      }
     }),
   )
 
@@ -91,6 +94,9 @@ function setupGlobalWsListeners() {
         hugsStore.outgoingHug = null
         toast.success(`Обнимашка с ${data.receiver_username} принята!`)
         hugsStore.fetchBalance()
+        hugsStore.triggerCooldownRefresh(data.receiver_id)
+      } else if (data.receiver_id === auth.user?.id) {
+        hugsStore.triggerCooldownRefresh(data.giver_id)
       }
     }),
   )

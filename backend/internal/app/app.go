@@ -94,8 +94,8 @@ func New(ctx context.Context, cfg *config.Config, l *slog.Logger) (*App, error) 
 	hugService.SetHugSuggestionCallback(func(targetUserID uuid.UUID, item *models.PendingHugInboxItem) {
 		a.hub.SendToUser(targetUserID, "hug_suggestion", item)
 	})
-	hugService.SetHugDeclinedCallback(func(targetUserID uuid.UUID, hugID uuid.UUID) {
-		a.hub.SendToUser(targetUserID, "hug_declined", map[string]string{"hug_id": hugID.String()})
+	hugService.SetHugDeclinedCallback(func(targetUserID uuid.UUID, hugID uuid.UUID, receiverID uuid.UUID) {
+		a.hub.SendToUser(targetUserID, "hug_declined", map[string]string{"hug_id": hugID.String(), "receiver_id": receiverID.String()})
 	})
 	hugService.SetHugCancelledCallback(func(targetUserID uuid.UUID, hugID uuid.UUID) {
 		a.hub.SendToUser(targetUserID, "hug_cancelled", map[string]string{"hug_id": hugID.String()})

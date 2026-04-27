@@ -89,6 +89,13 @@ export const useHugsStore = defineStore('hugs', () => {
   const inbox = ref<PendingHugInboxItem[]>([])
   const outgoingHug = ref<OutgoingPendingHug | null>(null)
   const inboxCount = ref(0)
+  
+  // Track timestamps of when a specific user's cooldown needs to be refreshed by HugButton components
+  const cooldownRefreshes = ref<Record<string, number>>({})
+
+  function triggerCooldownRefresh(userId: string) {
+    cooldownRefreshes.value[userId] = Date.now()
+  }
 
   async function fetchBalance() {
     try {
@@ -221,6 +228,8 @@ export const useHugsStore = defineStore('hugs', () => {
     inbox,
     outgoingHug,
     inboxCount,
+    cooldownRefreshes,
+    triggerCooldownRefresh,
     fetchBalance,
     claimDailyReward,
     suggestHug,

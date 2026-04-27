@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { Heart, Clock, Loader2, Hourglass } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { useAuthStore } from '@/stores/auth'
@@ -84,6 +84,12 @@ function formatTime(seconds: number): string {
 onMounted(loadCooldown)
 onUnmounted(() => {
   if (timer) clearInterval(timer)
+})
+
+watch(() => hugsStore.cooldownRefreshes[props.userId], (newVal, oldVal) => {
+  if (newVal && newVal !== oldVal) {
+    loadCooldown()
+  }
 })
 </script>
 

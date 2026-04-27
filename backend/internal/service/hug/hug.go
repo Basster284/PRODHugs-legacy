@@ -214,7 +214,7 @@ func (s *service) DeclineHug(ctx context.Context, hugID, receiverID uuid.UUID) e
 
 	// Fire WebSocket hug_declined to giver
 	if s.onHugDeclined != nil {
-		s.onHugDeclined(h.GiverID, hugID)
+		s.onHugDeclined(h.GiverID, hugID, h.ReceiverID)
 	}
 
 	return nil

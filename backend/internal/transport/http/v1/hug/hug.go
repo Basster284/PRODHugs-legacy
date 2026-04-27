@@ -221,6 +221,9 @@ func (h *HugHandler) GetCooldown(ctx context.Context, req v1.GetCooldownRequestO
 	if declineRemaining > 0 {
 		dr := int(declineRemaining)
 		resp.DeclineCooldownRemaining = &dr
+		if dr > int(remaining) {
+			resp.RemainingSeconds = dr
+		}
 	}
 
 	return resp, nil
