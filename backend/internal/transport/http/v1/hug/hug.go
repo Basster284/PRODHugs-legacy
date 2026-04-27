@@ -38,6 +38,11 @@ func (h *HugHandler) SuggestHug(ctx context.Context, req v1.SuggestHugRequestObj
 				ConflictJSONResponse: v1.ConflictJSONResponse{Code: v1.PENDINGHUGEXISTS, Message: "Pending hug already exists for this pair"},
 			}, nil
 		}
+		if errors.Is(err, errorz.ErrReversePendingHugExists) {
+			return v1.SuggestHug409JSONResponse{
+				ConflictJSONResponse: v1.ConflictJSONResponse{Code: v1.PENDINGHUGEXISTS, Message: "This user has already suggested a hug to you"},
+			}, nil
+		}
 		if errors.Is(err, errorz.ErrDeclineCooldownActive) {
 			return v1.SuggestHug429JSONResponse{TooManyRequestsJSONResponse: v1.TooManyRequestsJSONResponse{Code: v1.DECLINECOOLDOWNACTIVE, Message: "Decline cooldown active"}}, nil
 		}

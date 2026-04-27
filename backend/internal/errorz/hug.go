@@ -10,6 +10,7 @@ var (
 	ErrCooldownNotFound        = errors.New("cooldown not found for this pair")
 	ErrAlreadyHasPendingHug    = errors.New("already has a pending hug")
 	ErrPendingHugExists        = errors.New("pending hug already exists for this pair")
+	ErrReversePendingHugExists = errors.New("user has already suggested a hug to you")
 	ErrHugNotFound             = errors.New("hug not found")
 	ErrHugNotPending           = errors.New("hug is not in pending state")
 	ErrHugExpired              = errors.New("hug suggestion has expired")

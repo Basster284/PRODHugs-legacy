@@ -48,6 +48,15 @@ func (s *service) SuggestHug(ctx context.Context, giverID, receiverID uuid.UUID)
 		return nil, errorz.ErrPendingHugExists
 	}
 
+	// Check if the receiver has already suggested a hug to the giver
+	reversePending, err := s.hugRepo.HasPendingHugForPair(ctx, receiverID, giverID)
+	if err != nil {
+		return nil, err
+	}
+	if reversePending {
+		return nil, errorz.ErrReversePendingHugExists
+	}
+
 	// Check shared cooldown
 	cooldown, err := s.hugRepo.GetCooldown(ctx, giverID, receiverID)
 	if err != nil {

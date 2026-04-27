@@ -28,11 +28,12 @@ let timer: ReturnType<typeof setInterval> | null = null
 // Pending state computeds
 const hasGlobalPending = computed(() => !!hugsStore.outgoingHug)
 const isPendingWithThisUser = computed(() => hugsStore.outgoingHug?.receiver_id === props.userId)
+const hasIncomingPending = computed(() => hugsStore.inbox.some(h => h.giver_id === props.userId))
 
-const isDisabled = computed(() => loading.value || remaining.value > 0 || hasGlobalPending.value)
+const isDisabled = computed(() => loading.value || remaining.value > 0 || hasGlobalPending.value || hasIncomingPending.value)
 
 const buttonVariant = computed(() => {
-  if (remaining.value > 0 || hasGlobalPending.value) return 'secondary'
+  if (remaining.value > 0 || hasGlobalPending.value || hasIncomingPending.value) return 'secondary'
   return 'yellow'
 })
 
@@ -97,10 +98,11 @@ onUnmounted(() => {
     >
       <Loader2 v-if="loading" class="size-4 animate-spin" />
       <Clock v-else-if="remaining > 0" class="size-4" />
-      <Hourglass v-else-if="hasGlobalPending" class="size-4" />
+      <Hourglass v-else-if="hasGlobalPending || hasIncomingPending" class="size-4" />
       <Heart v-else class="size-4" />
       <span v-if="remaining > 0">{{ formatTime(remaining) }}</span>
       <span v-else-if="isPendingWithThisUser">Ожидание...</span>
+      <span v-else-if="hasIncomingPending">Ждет твоего ответа</span>
       <span v-else-if="hasGlobalPending">Ты уже ждешь ответа от другого</span>
       <span v-else>Предложить обняться</span>
     </Button>
