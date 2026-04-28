@@ -50,8 +50,9 @@ type valkey struct {
 
 type jwt struct {
 	Secret                  string `env:"JWT_SECRET" env-required:"true"`
-	AccessTokenDurationSec  int64  `env:"JWT_ACCESS_DURATION" env-default:"900"`    // 15 minutes
+	AccessTokenDurationSec  int64  `env:"JWT_ACCESS_DURATION" env-default:"900"`     // 15 minutes
 	RefreshTokenDurationSec int64  `env:"JWT_REFRESH_DURATION" env-default:"604800"` // 7 days
+	CookieSecure            bool   `env:"JWT_COOKIE_SECURE" env-default:"true"`
 }
 
 func New() (*Config, error) {

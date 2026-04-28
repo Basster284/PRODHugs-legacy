@@ -7,25 +7,25 @@ import (
 	"time"
 )
 
-func makeRefreshCookie(token string, maxAge time.Duration) *http.Cookie {
+func makeRefreshCookie(token string, maxAge time.Duration, secure bool) *http.Cookie {
 	return &http.Cookie{
 		Name:     "refresh_token",
 		Value:    token,
 		Path:     "/api/v1/auth/",
 		HttpOnly: true,
-		Secure:   false, // set true when behind HTTPS in production
+		Secure:   secure,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   int(maxAge.Seconds()),
 	}
 }
 
-func expiredRefreshCookie() *http.Cookie {
+func expiredRefreshCookie(secure bool) *http.Cookie {
 	return &http.Cookie{
 		Name:     "refresh_token",
 		Value:    "",
 		Path:     "/api/v1/auth/",
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   secure,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 	}
@@ -84,7 +84,7 @@ func (h *UserHandler) RefreshToken(ctx context.Context, req v1.RefreshTokenReque
 		return nil, err
 	}
 
-	cookie := makeRefreshCookie(newRefreshToken, h.jwtManager.RefreshTokenDuration())
+	cookie := makeRefreshCookie(newRefreshToken, h.jwtManager.RefreshTokenDuration(), h.cookieSecure)
 
 	return v1.RefreshToken200JSONResponse{
 		Body: struct {
@@ -97,7 +97,7 @@ func (h *UserHandler) RefreshToken(ctx context.Context, req v1.RefreshTokenReque
 }
 
 func (h *UserHandler) Logout(_ context.Context, _ v1.LogoutRequestObject) (v1.LogoutResponseObject, error) {
-	cookie := expiredRefreshCookie()
+	cookie := expiredRefreshCookie(h.cookieSecure)
 
 	return v1.Logout200JSONResponse{
 		Body: struct {

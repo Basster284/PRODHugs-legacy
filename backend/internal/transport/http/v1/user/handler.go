@@ -18,12 +18,13 @@ type service interface {
 }
 
 type UserHandler struct {
-	svc        service
-	jwtManager *jwt.Manager
+	svc          service
+	jwtManager   *jwt.Manager
+	cookieSecure bool
 }
 
-func New(svc service, jwtManager *jwt.Manager) *UserHandler {
-	return &UserHandler{svc: svc, jwtManager: jwtManager}
+func New(svc service, jwtManager *jwt.Manager, cookieSecure bool) *UserHandler {
+	return &UserHandler{svc: svc, jwtManager: jwtManager, cookieSecure: cookieSecure}
 }
 
 func toV1User(u *models.User) v1.User {

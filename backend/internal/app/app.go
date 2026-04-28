@@ -110,7 +110,7 @@ func New(ctx context.Context, cfg *config.Config, l *slog.Logger) (*App, error) 
 	})
 
 	// Handlers
-	userHandler := userhandler.New(userService, jwtManager)
+	userHandler := userhandler.New(userService, jwtManager, a.cfg.JWT.CookieSecure)
 	hugHandler := hughandler.New(hugService)
 	adminHandler := adminhandler.New(userService)
 
