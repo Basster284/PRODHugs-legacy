@@ -83,7 +83,7 @@ async function buySlot() {
             </span>
             <RouterLink
               :to="`/user/${item.receiver_id}`"
-              class="ml-1 font-medium hover:underline"
+              class="font-medium hover:underline"
             >
               {{ item.receiver_username }}
             </RouterLink>
