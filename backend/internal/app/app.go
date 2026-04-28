@@ -28,6 +28,7 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"golang.org/x/time/rate"
 
 	balancerepo "go-service-template/internal/repository/balance"
 	blockrepo "go-service-template/internal/repository/block"
@@ -283,6 +284,7 @@ func (a *App) initEcho() error {
 	}))
 	a.e.Use(metrics.Middleware())
 	a.e.Use(middleware.Recover())
+	a.e.Use(custommiddleware.AuthRateLimitMiddleware(rate.Limit(2), 5))
 
 	a.e.GET("/api/v1/openapi.json", func(c echo.Context) error {
 		spec, err := v1.GetSwagger()
