@@ -37,17 +37,24 @@ function initials(username: string): string {
 async function accept(item: (typeof inbox.value)[number], event: MouseEvent) {
   if (acceptingId.value || decliningId.value) return
   acceptingId.value = item.id
+
+  // Capture button position synchronously BEFORE the await removes the DOM element.
+  const target = event.currentTarget as HTMLElement
+  let explosionPos: { top: string; left: string; transform: string } | null = null
+  if (target) {
+    const rect = target.getBoundingClientRect()
+    explosionPos = {
+      top: `${rect.top + rect.height / 2}px`,
+      left: `${rect.left + rect.width / 2}px`,
+      transform: 'translate(-50%, -50%)',
+    }
+  }
+
   try {
     await hugsStore.acceptHug(item.id)
-    // Trigger explosion at button position
-    const target = event.currentTarget as HTMLElement
-    if (target) {
-      const rect = target.getBoundingClientRect()
-      explosionStyle.value = {
-        top: `${rect.top + rect.height / 2}px`,
-        left: `${rect.left + rect.width / 2}px`,
-        transform: 'translate(-50%, -50%)',
-      }
+    // Trigger explosion at the pre-captured position
+    if (explosionPos) {
+      explosionStyle.value = explosionPos
       showExplosion.value = true
     }
     toast.success(`Обнимашка с ${item.giver_username} принята!`)
