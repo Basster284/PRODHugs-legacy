@@ -70,7 +70,7 @@ async function buySlot() {
   <Card>
     <CardHeader class="pb-3">
       <CardTitle class="flex items-center justify-between text-base">
-        <span>Предложения обняться</span>
+        <span>Исходящие обнимашки</span>
         <span class="text-xs font-normal text-muted-foreground tabular-nums">
           {{ outgoing.length }}/{{ slots.total_slots }} слотов
         </span>
