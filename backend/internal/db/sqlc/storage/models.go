@@ -45,4 +45,5 @@ type User struct {
 	Role     string
 	Gender   pgtype.Text
 	BannedAt pgtype.Timestamptz
+	HugSlots int32
 }

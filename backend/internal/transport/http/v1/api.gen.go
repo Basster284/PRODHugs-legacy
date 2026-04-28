@@ -45,6 +45,7 @@ const (
 	HUGNOTPENDING         ErrorCode = "HUG_NOT_PENDING"
 	INSUFFICIENTBALANCE   ErrorCode = "INSUFFICIENT_BALANCE"
 	INVALIDCREDENTIALS    ErrorCode = "INVALID_CREDENTIALS"
+	MAXSLOTSREACHED       ErrorCode = "MAX_SLOTS_REACHED"
 	PENDINGHUGEXISTS      ErrorCode = "PENDING_HUG_EXISTS"
 	USERALREADYEXISTS     ErrorCode = "USER_ALREADY_EXISTS"
 	USERBANNED            ErrorCode = "USER_BANNED"
@@ -102,6 +103,12 @@ type AuthResponse struct {
 type Balance struct {
 	Amount int                `json:"amount"`
 	UserId openapi_types.UUID `json:"user_id"`
+}
+
+// BuySlotResponse defines model for BuySlotResponse.
+type BuySlotResponse struct {
+	NewBalance int         `json:"new_balance"`
+	Slots      HugSlotInfo `json:"slots"`
 }
 
 // CooldownInfo defines model for CooldownInfo.
@@ -166,6 +173,14 @@ type HugFeedItem struct {
 	ReceiverUsername string             `json:"receiver_username"`
 }
 
+// HugSlotInfo defines model for HugSlotInfo.
+type HugSlotInfo struct {
+	// NextSlotCost Cost of the next slot in coins, null if at max
+	NextSlotCost *int `json:"next_slot_cost"`
+	TotalSlots   int  `json:"total_slots"`
+	UsedSlots    int  `json:"used_slots"`
+}
+
 // InboxCount defines model for InboxCount.
 type InboxCount struct {
 	Count int `json:"count"`
@@ -179,6 +194,12 @@ type LeaderboardEntry struct {
 	TotalHugs    int                `json:"total_hugs"`
 	UserId       openapi_types.UUID `json:"user_id"`
 	Username     string             `json:"username"`
+}
+
+// OutgoingHugsResponse defines model for OutgoingHugsResponse.
+type OutgoingHugsResponse struct {
+	Hugs  []OutgoingPendingHug `json:"hugs"`
+	Slots HugSlotInfo          `json:"slots"`
 }
 
 // OutgoingPendingHug defines model for OutgoingPendingHug.
@@ -416,9 +437,12 @@ type ServerInterface interface {
 	// Get count of pending incoming suggestions
 	// (GET /hugs/inbox/count)
 	GetHugInboxCount(ctx echo.Context) error
-	// Get current user's outgoing pending hug
+	// Get current user's outgoing pending hugs and slot info
 	// (GET /hugs/outgoing)
-	GetOutgoingHug(ctx echo.Context) error
+	GetOutgoingHugs(ctx echo.Context) error
+	// Buy an additional hug suggestion slot
+	// (POST /hugs/slots/buy)
+	BuyHugSlot(ctx echo.Context) error
 	// Accept a pending hug suggestion
 	// (POST /hugs/{hugId}/accept)
 	AcceptHug(ctx echo.Context, hugId openapi_types.UUID) error
@@ -772,14 +796,25 @@ func (w *ServerInterfaceWrapper) GetHugInboxCount(ctx echo.Context) error {
 	return err
 }
 
-// GetOutgoingHug converts echo context to params.
-func (w *ServerInterfaceWrapper) GetOutgoingHug(ctx echo.Context) error {
+// GetOutgoingHugs converts echo context to params.
+func (w *ServerInterfaceWrapper) GetOutgoingHugs(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BearerAuthScopes, []string{"user", "admin"})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetOutgoingHug(ctx)
+	err = w.Handler.GetOutgoingHugs(ctx)
+	return err
+}
+
+// BuyHugSlot converts echo context to params.
+func (w *ServerInterfaceWrapper) BuyHugSlot(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{"user", "admin"})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.BuyHugSlot(ctx)
 	return err
 }
 
@@ -1025,7 +1060,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/hugs/history", wrapper.GetHugHistory)
 	router.GET(baseURL+"/hugs/inbox", wrapper.GetHugInbox)
 	router.GET(baseURL+"/hugs/inbox/count", wrapper.GetHugInboxCount)
-	router.GET(baseURL+"/hugs/outgoing", wrapper.GetOutgoingHug)
+	router.GET(baseURL+"/hugs/outgoing", wrapper.GetOutgoingHugs)
+	router.POST(baseURL+"/hugs/slots/buy", wrapper.BuyHugSlot)
 	router.POST(baseURL+"/hugs/:hugId/accept", wrapper.AcceptHug)
 	router.POST(baseURL+"/hugs/:hugId/cancel", wrapper.CancelHug)
 	router.POST(baseURL+"/hugs/:hugId/decline", wrapper.DeclineHug)
@@ -1814,27 +1850,70 @@ func (response GetHugInboxCount401JSONResponse) VisitGetHugInboxCountResponse(w 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetOutgoingHugRequestObject struct {
+type GetOutgoingHugsRequestObject struct {
 }
 
-type GetOutgoingHugResponseObject interface {
-	VisitGetOutgoingHugResponse(w http.ResponseWriter) error
+type GetOutgoingHugsResponseObject interface {
+	VisitGetOutgoingHugsResponse(w http.ResponseWriter) error
 }
 
-type GetOutgoingHug200JSONResponse OutgoingPendingHug
+type GetOutgoingHugs200JSONResponse OutgoingHugsResponse
 
-func (response GetOutgoingHug200JSONResponse) VisitGetOutgoingHugResponse(w http.ResponseWriter) error {
+func (response GetOutgoingHugs200JSONResponse) VisitGetOutgoingHugsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetOutgoingHug401JSONResponse struct{ UnauthorizedJSONResponse }
+type GetOutgoingHugs401JSONResponse struct{ UnauthorizedJSONResponse }
 
-func (response GetOutgoingHug401JSONResponse) VisitGetOutgoingHugResponse(w http.ResponseWriter) error {
+func (response GetOutgoingHugs401JSONResponse) VisitGetOutgoingHugsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BuyHugSlotRequestObject struct {
+}
+
+type BuyHugSlotResponseObject interface {
+	VisitBuyHugSlotResponse(w http.ResponseWriter) error
+}
+
+type BuyHugSlot200JSONResponse BuySlotResponse
+
+func (response BuyHugSlot200JSONResponse) VisitBuyHugSlotResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BuyHugSlot400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response BuyHugSlot400JSONResponse) VisitBuyHugSlotResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BuyHugSlot401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response BuyHugSlot401JSONResponse) VisitBuyHugSlotResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BuyHugSlot409JSONResponse struct{ ConflictJSONResponse }
+
+func (response BuyHugSlot409JSONResponse) VisitBuyHugSlotResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -2340,9 +2419,12 @@ type StrictServerInterface interface {
 	// Get count of pending incoming suggestions
 	// (GET /hugs/inbox/count)
 	GetHugInboxCount(ctx context.Context, request GetHugInboxCountRequestObject) (GetHugInboxCountResponseObject, error)
-	// Get current user's outgoing pending hug
+	// Get current user's outgoing pending hugs and slot info
 	// (GET /hugs/outgoing)
-	GetOutgoingHug(ctx context.Context, request GetOutgoingHugRequestObject) (GetOutgoingHugResponseObject, error)
+	GetOutgoingHugs(ctx context.Context, request GetOutgoingHugsRequestObject) (GetOutgoingHugsResponseObject, error)
+	// Buy an additional hug suggestion slot
+	// (POST /hugs/slots/buy)
+	BuyHugSlot(ctx context.Context, request BuyHugSlotRequestObject) (BuyHugSlotResponseObject, error)
 	// Accept a pending hug suggestion
 	// (POST /hugs/{hugId}/accept)
 	AcceptHug(ctx context.Context, request AcceptHugRequestObject) (AcceptHugResponseObject, error)
@@ -2923,23 +3005,46 @@ func (sh *strictHandler) GetHugInboxCount(ctx echo.Context) error {
 	return nil
 }
 
-// GetOutgoingHug operation middleware
-func (sh *strictHandler) GetOutgoingHug(ctx echo.Context) error {
-	var request GetOutgoingHugRequestObject
+// GetOutgoingHugs operation middleware
+func (sh *strictHandler) GetOutgoingHugs(ctx echo.Context) error {
+	var request GetOutgoingHugsRequestObject
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetOutgoingHug(ctx.Request().Context(), request.(GetOutgoingHugRequestObject))
+		return sh.ssi.GetOutgoingHugs(ctx.Request().Context(), request.(GetOutgoingHugsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetOutgoingHug")
+		handler = middleware(handler, "GetOutgoingHugs")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(GetOutgoingHugResponseObject); ok {
-		return validResponse.VisitGetOutgoingHugResponse(ctx.Response())
+	} else if validResponse, ok := response.(GetOutgoingHugsResponseObject); ok {
+		return validResponse.VisitGetOutgoingHugsResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// BuyHugSlot operation middleware
+func (sh *strictHandler) BuyHugSlot(ctx echo.Context) error {
+	var request BuyHugSlotRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.BuyHugSlot(ctx.Request().Context(), request.(BuyHugSlotRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "BuyHugSlot")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(BuyHugSlotResponseObject); ok {
+		return validResponse.VisitBuyHugSlotResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}
@@ -3228,62 +3333,66 @@ func (sh *strictHandler) GetUserProfile(ctx echo.Context, userId openapi_types.U
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"I2/2MPtXAAAA//9DFInKlGQAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

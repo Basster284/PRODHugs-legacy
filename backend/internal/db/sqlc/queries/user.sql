@@ -123,3 +123,12 @@ RETURNING *;
 UPDATE users
 SET password = $2
 WHERE id = $1;
+
+-- name: GetUserSlots :one
+SELECT hug_slots FROM users WHERE id = $1;
+
+-- name: IncrementUserSlots :one
+UPDATE users
+SET hug_slots = hug_slots + 1
+WHERE id = $1 AND hug_slots < 5
+RETURNING hug_slots;

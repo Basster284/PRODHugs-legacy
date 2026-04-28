@@ -18,11 +18,11 @@ type hugRepo interface {
 	GetHugByID(ctx context.Context, hugID uuid.UUID) (*models.Hug, error)
 	ListHugsByUser(ctx context.Context, userID uuid.UUID, limit, offset int32) ([]*models.HugFeedItem, error)
 	GetPendingHugsForUser(ctx context.Context, userID uuid.UUID) ([]*models.PendingHugInboxItem, error)
-	GetOutgoingPendingHug(ctx context.Context, userID uuid.UUID) (*models.OutgoingPendingHug, error)
+	GetOutgoingPendingHugs(ctx context.Context, userID uuid.UUID) ([]*models.OutgoingPendingHug, error)
 	CountPendingHugsForUser(ctx context.Context, userID uuid.UUID) (int64, error)
 	HasOutgoingPendingHug(ctx context.Context, userID uuid.UUID) (bool, error)
 	HasPendingHugForPair(ctx context.Context, giverID, receiverID uuid.UUID) (bool, error)
-	CheckSuggestEligibility(ctx context.Context, giverID, receiverID uuid.UUID) (hasOutgoing, pairPending, reversePending bool, err error)
+	CheckSuggestEligibility(ctx context.Context, giverID, receiverID uuid.UUID) (outgoingCount int32, pairPending, reversePending bool, err error)
 	GetCooldown(ctx context.Context, userA, userB uuid.UUID) (*models.HugCooldown, error)
 	UpsertCooldown(ctx context.Context, userA, userB uuid.UUID, cooldownSeconds int32) (*models.HugCooldown, error)
 	ReduceCooldown(ctx context.Context, userA, userB uuid.UUID, reduction int32) (*models.HugCooldown, error)
@@ -50,6 +50,8 @@ type dailyRewardRepo interface {
 
 type userRepo interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
+	GetUserSlots(ctx context.Context, userID uuid.UUID) (int32, error)
+	IncrementUserSlots(ctx context.Context, userID uuid.UUID) (int32, error)
 }
 
 type transactor interface {

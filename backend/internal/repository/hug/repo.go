@@ -144,17 +144,4 @@ func toModelPendingInboxItem(row storage.GetPendingHugsForUserRow) *models.Pendi
 	}
 }
 
-func toModelOutgoingPendingHug(row storage.GetOutgoingPendingHugRow) *models.OutgoingPendingHug {
-	var receiverGender *string
-	if row.ReceiverGender.Valid {
-		receiverGender = &row.ReceiverGender.String
-	}
-	return &models.OutgoingPendingHug{
-		ID:               row.ID,
-		GiverID:          row.GiverID,
-		ReceiverID:       row.ReceiverID,
-		ReceiverUsername:  row.ReceiverUsername,
-		ReceiverGender:   receiverGender,
-		CreatedAt:        row.CreatedAt.Time,
-	}
-}
+

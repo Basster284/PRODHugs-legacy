@@ -64,12 +64,11 @@ func (q *Queries) CancelHug(ctx context.Context, arg CancelHugParams) (Hug, erro
 
 const checkSuggestEligibility = `-- name: CheckSuggestEligibility :one
 SELECT
-    EXISTS(
-        SELECT 1 FROM hugs
-        WHERE giver_id = $1::uuid
-          AND status = 'pending'
-          AND created_at > now() - INTERVAL '24 hours'
-    ) AS has_outgoing,
+    (SELECT COUNT(*) FROM hugs
+     WHERE giver_id = $1::uuid
+       AND status = 'pending'
+       AND created_at > now() - INTERVAL '24 hours'
+    )::int AS outgoing_count,
     EXISTS(
         SELECT 1 FROM hugs
         WHERE giver_id = $1::uuid
@@ -92,7 +91,7 @@ type CheckSuggestEligibilityParams struct {
 }
 
 type CheckSuggestEligibilityRow struct {
-	HasOutgoing    bool
+	OutgoingCount  int32
 	PairPending    bool
 	ReversePending bool
 }
@@ -100,7 +99,7 @@ type CheckSuggestEligibilityRow struct {
 func (q *Queries) CheckSuggestEligibility(ctx context.Context, arg CheckSuggestEligibilityParams) (CheckSuggestEligibilityRow, error) {
 	row := q.db.QueryRow(ctx, checkSuggestEligibility, arg.GiverID, arg.ReceiverID)
 	var i CheckSuggestEligibilityRow
-	err := row.Scan(&i.HasOutgoing, &i.PairPending, &i.ReversePending)
+	err := row.Scan(&i.OutgoingCount, &i.PairPending, &i.ReversePending)
 	return i, err
 }
 
@@ -282,7 +281,7 @@ func (q *Queries) GetHugByID(ctx context.Context, id uuid.UUID) (GetHugByIDRow, 
 	return i, err
 }
 
-const getOutgoingPendingHug = `-- name: GetOutgoingPendingHug :one
+const getOutgoingPendingHugs = `-- name: GetOutgoingPendingHugs :many
 SELECT h.id, h.giver_id, h.receiver_id, h.status, h.created_at, h.accepted_at,
        r.username AS receiver_username, r.gender AS receiver_gender
 FROM hugs h
@@ -290,10 +289,10 @@ JOIN users r ON r.id = h.receiver_id
 WHERE h.giver_id = $1
   AND h.status = 'pending'
   AND h.created_at > now() - INTERVAL '24 hours'
-LIMIT 1
+ORDER BY h.created_at DESC
 `
 
-type GetOutgoingPendingHugRow struct {
+type GetOutgoingPendingHugsRow struct {
 	ID               uuid.UUID
 	GiverID          uuid.UUID
 	ReceiverID       uuid.UUID
@@ -304,20 +303,33 @@ type GetOutgoingPendingHugRow struct {
 	ReceiverGender   pgtype.Text
 }
 
-func (q *Queries) GetOutgoingPendingHug(ctx context.Context, giverID uuid.UUID) (GetOutgoingPendingHugRow, error) {
-	row := q.db.QueryRow(ctx, getOutgoingPendingHug, giverID)
-	var i GetOutgoingPendingHugRow
-	err := row.Scan(
-		&i.ID,
-		&i.GiverID,
-		&i.ReceiverID,
-		&i.Status,
-		&i.CreatedAt,
-		&i.AcceptedAt,
-		&i.ReceiverUsername,
-		&i.ReceiverGender,
-	)
-	return i, err
+func (q *Queries) GetOutgoingPendingHugs(ctx context.Context, giverID uuid.UUID) ([]GetOutgoingPendingHugsRow, error) {
+	rows, err := q.db.Query(ctx, getOutgoingPendingHugs, giverID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetOutgoingPendingHugsRow
+	for rows.Next() {
+		var i GetOutgoingPendingHugsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.GiverID,
+			&i.ReceiverID,
+			&i.Status,
+			&i.CreatedAt,
+			&i.AcceptedAt,
+			&i.ReceiverUsername,
+			&i.ReceiverGender,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getPendingHugsForUser = `-- name: GetPendingHugsForUser :many

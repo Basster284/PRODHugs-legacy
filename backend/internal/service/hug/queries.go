@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"go-service-template/internal/errorz"
 	"go-service-template/internal/models"
 
 	"github.com/google/uuid"
@@ -112,8 +113,90 @@ func (s *service) GetPendingInbox(ctx context.Context, userID uuid.UUID) ([]*mod
 	return s.hugRepo.GetPendingHugsForUser(ctx, userID)
 }
 
-func (s *service) GetOutgoingPendingHug(ctx context.Context, userID uuid.UUID) (*models.OutgoingPendingHug, error) {
-	return s.hugRepo.GetOutgoingPendingHug(ctx, userID)
+func (s *service) GetOutgoingHugs(ctx context.Context, userID uuid.UUID) ([]*models.OutgoingPendingHug, *models.SlotInfo, error) {
+	hugs, err := s.hugRepo.GetOutgoingPendingHugs(ctx, userID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	slots, err := s.userRepo.GetUserSlots(ctx, userID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	slotInfo := &models.SlotInfo{
+		TotalSlots: slots,
+		UsedSlots:  int32(len(hugs)),
+	}
+	if slots < models.MaxHugSlots {
+		cost := models.SlotCost(slots + 1)
+		slotInfo.NextSlotCost = &cost
+	}
+
+	return hugs, slotInfo, nil
+}
+
+func (s *service) BuyHugSlot(ctx context.Context, userID uuid.UUID) (*models.SlotInfo, int32, error) {
+	var (
+		slotInfo   *models.SlotInfo
+		newBalance int32
+	)
+
+	err := s.tx.RunInTx(ctx, func(txCtx context.Context) error {
+		// Get current slot count
+		currentSlots, err := s.userRepo.GetUserSlots(txCtx, userID)
+		if err != nil {
+			return err
+		}
+		if currentSlots >= models.MaxHugSlots {
+			return errorz.ErrMaxSlotsReached
+		}
+
+		// Calculate cost for the next slot
+		cost := models.SlotCost(currentSlots + 1)
+
+		// Deduct balance
+		bal, err := s.balanceRepo.DeductBalance(txCtx, userID, cost)
+		if err != nil {
+			return err
+		}
+		if bal == nil {
+			return errorz.ErrInsufficientBalance
+		}
+		newBalance = bal.Amount
+
+		// Increment slots
+		newSlots, err := s.userRepo.IncrementUserSlots(txCtx, userID)
+		if err != nil {
+			return err
+		}
+		if newSlots == 0 {
+			// Shouldn't happen since we checked above, but safety
+			return errorz.ErrMaxSlotsReached
+		}
+
+		// Count current outgoing hugs for the response
+		outgoing, err := s.hugRepo.GetOutgoingPendingHugs(txCtx, userID)
+		if err != nil {
+			return err
+		}
+
+		slotInfo = &models.SlotInfo{
+			TotalSlots: newSlots,
+			UsedSlots:  int32(len(outgoing)),
+		}
+		if newSlots < models.MaxHugSlots {
+			nextCost := models.SlotCost(newSlots + 1)
+			slotInfo.NextSlotCost = &nextCost
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return slotInfo, newBalance, nil
 }
 
 func (s *service) GetInboxCount(ctx context.Context, userID uuid.UUID) (int64, error) {

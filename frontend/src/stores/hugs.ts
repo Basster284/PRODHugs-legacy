@@ -30,6 +30,12 @@ export interface OutgoingPendingHug {
   created_at: string
 }
 
+export interface SlotInfo {
+  total_slots: number
+  used_slots: number
+  next_slot_cost: number | null
+}
+
 export interface LeaderboardEntry {
   user_id: string
   username: string
@@ -89,9 +95,10 @@ export const useHugsStore = defineStore('hugs', () => {
 
   // Inbox / outgoing state
   const inbox = ref<PendingHugInboxItem[]>([])
-  const outgoingHug = ref<OutgoingPendingHug | null>(null)
+  const outgoingHugs = ref<OutgoingPendingHug[]>([])
+  const slotInfo = ref<SlotInfo>({ total_slots: 1, used_slots: 0, next_slot_cost: 10 })
   const inboxCount = ref(0)
-  
+
   // Track timestamps of when a specific user's cooldown needs to be refreshed by HugButton components
   const cooldownRefreshes = ref<Record<string, number>>({})
 
@@ -116,15 +123,16 @@ export const useHugsStore = defineStore('hugs', () => {
 
   async function suggestHug(userId: string) {
     const res = await hugsApi.suggest(userId)
-    // The suggest endpoint now returns receiver_username/receiver_gender directly.
-    outgoingHug.value = {
+    // The suggest endpoint returns receiver_username/receiver_gender directly.
+    outgoingHugs.value.unshift({
       id: res.data.id,
       giver_id: res.data.giver_id,
       receiver_id: res.data.receiver_id,
       receiver_username: res.data.receiver_username,
       receiver_gender: res.data.receiver_gender,
       created_at: res.data.created_at,
-    }
+    })
+    slotInfo.value.used_slots = outgoingHugs.value.length
     return res.data
   }
 
@@ -148,7 +156,8 @@ export const useHugsStore = defineStore('hugs', () => {
 
   async function cancelOutgoing(hugId: string) {
     const res = await hugsApi.cancel(hugId)
-    outgoingHug.value = null
+    outgoingHugs.value = outgoingHugs.value.filter((h) => h.id !== hugId)
+    slotInfo.value.used_slots = outgoingHugs.value.length
     return res.data
   }
 
@@ -161,8 +170,20 @@ export const useHugsStore = defineStore('hugs', () => {
 
   async function fetchOutgoing() {
     const res = await hugsApi.getOutgoing()
-    outgoingHug.value = res.data || null
-    return outgoingHug.value
+    outgoingHugs.value = res.data?.hugs || []
+    if (res.data?.slots) {
+      slotInfo.value = res.data.slots
+    }
+    return outgoingHugs.value
+  }
+
+  async function buySlot() {
+    const res = await hugsApi.buySlot()
+    slotInfo.value = res.data.slots
+    balance.value = balance.value
+      ? { ...balance.value, amount: res.data.new_balance }
+      : { user_id: '', amount: res.data.new_balance }
+    return res.data
   }
 
   async function fetchInboxCount() {
@@ -230,7 +251,8 @@ export const useHugsStore = defineStore('hugs', () => {
     feedLoading,
     leaderboardLoading,
     inbox,
-    outgoingHug,
+    outgoingHugs,
+    slotInfo,
     inboxCount,
     cooldownRefreshes,
     triggerCooldownRefresh,
@@ -242,6 +264,7 @@ export const useHugsStore = defineStore('hugs', () => {
     cancelOutgoing,
     fetchInbox,
     fetchOutgoing,
+    buySlot,
     fetchInboxCount,
     getCooldown,
     upgradeCooldown,

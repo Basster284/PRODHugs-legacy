@@ -1,0 +1,165 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { Heart, X, Plus, Coins } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
+import { useHugsStore } from '@/stores/hugs'
+import { useAuthStore } from '@/stores/auth'
+import { suggestVerb } from '@/lib/utils'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+
+const hugsStore = useHugsStore()
+const auth = useAuthStore()
+const cancellingId = ref<string | null>(null)
+const buying = ref(false)
+
+const outgoing = computed(() => hugsStore.outgoingHugs)
+const slots = computed(() => hugsStore.slotInfo)
+const emptySlots = computed(() => Math.max(0, slots.value.total_slots - outgoing.value.length))
+const canBuy = computed(() => slots.value.next_slot_cost !== null)
+
+function relativeTime(dateStr: string): string {
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
+  if (diff < 60) return 'только что'
+  if (diff < 3600) return `${Math.floor(diff / 60)} мин. назад`
+  if (diff < 86400) return `${Math.floor(diff / 3600)} ч. назад`
+  return new Date(dateStr).toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+  })
+}
+
+async function cancel(hugId: string) {
+  if (cancellingId.value) return
+  cancellingId.value = hugId
+  try {
+    await hugsStore.cancelOutgoing(hugId)
+    toast('Предложение отменено')
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { message?: string } } }
+    toast.error(err.response?.data?.message || 'Не удалось отменить')
+  } finally {
+    cancellingId.value = null
+  }
+}
+
+async function buySlot() {
+  if (buying.value) return
+  buying.value = true
+  try {
+    await hugsStore.buySlot()
+    toast.success('Слот куплен!')
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { message?: string } } }
+    toast.error(err.response?.data?.message || 'Не удалось купить слот')
+  } finally {
+    buying.value = false
+  }
+}
+</script>
+
+<template>
+  <Card>
+    <CardHeader class="pb-3">
+      <CardTitle class="flex items-center justify-between text-base">
+        <span>Исходящие обнимашки</span>
+        <span class="text-xs font-normal text-muted-foreground tabular-nums">
+          {{ outgoing.length }}/{{ slots.total_slots }} слотов
+        </span>
+      </CardTitle>
+    </CardHeader>
+    <CardContent class="space-y-2">
+      <!-- Active outgoing hugs -->
+      <TransitionGroup name="slot-item" tag="div" class="space-y-2">
+        <div
+          v-for="item in outgoing"
+          :key="item.id"
+          class="flex items-center gap-2.5 rounded-md border border-prod-yellow/20 bg-prod-yellow/5 px-3 py-2"
+        >
+          <Heart class="size-3.5 shrink-0 text-prod-yellow" />
+          <div class="min-w-0 flex-1 text-sm">
+            <span class="text-muted-foreground">
+              Ты {{ suggestVerb(auth.user?.gender) }} обняться
+            </span>
+            <RouterLink
+              :to="`/user/${item.receiver_id}`"
+              class="ml-1 font-medium hover:underline"
+            >
+              {{ item.receiver_username }}
+            </RouterLink>
+            <span class="ml-1.5 text-[10px] text-muted-foreground">
+              {{ relativeTime(item.created_at) }}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            class="size-7 shrink-0 p-0"
+            :disabled="cancellingId === item.id"
+            @click="cancel(item.id)"
+          >
+            <X class="size-3.5" />
+          </Button>
+        </div>
+      </TransitionGroup>
+
+      <!-- Empty slots placeholder -->
+      <div
+        v-for="i in emptySlots"
+        :key="`empty-${i}`"
+        class="flex items-center gap-2.5 rounded-md border border-dashed border-muted-foreground/20 px-3 py-2 text-sm text-muted-foreground"
+      >
+        <div class="size-3.5 shrink-0 rounded-full border border-dashed border-muted-foreground/30" />
+        <span>Свободный слот</span>
+      </div>
+
+      <!-- Empty state when no slots used and only 1 slot total -->
+      <div
+        v-if="outgoing.length === 0 && emptySlots === 0"
+        class="py-2 text-center text-sm text-muted-foreground"
+      >
+        Нет активных предложений
+      </div>
+
+      <!-- Buy slot button -->
+      <Button
+        v-if="canBuy"
+        variant="outline"
+        size="sm"
+        class="mt-2 w-full gap-1.5 rounded-[21px]"
+        :disabled="buying"
+        @click="buySlot"
+      >
+        <Plus class="size-3.5" />
+        Купить слот
+        <span class="inline-flex items-center gap-0.5 text-muted-foreground">
+          · <Coins class="size-3" /> {{ slots.next_slot_cost }}
+        </span>
+      </Button>
+    </CardContent>
+  </Card>
+</template>
+
+<style scoped>
+.slot-item-enter-active {
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.slot-item-leave-active {
+  transition: all 0.2s ease-out;
+}
+
+.slot-item-enter-from {
+  opacity: 0;
+  transform: translateX(12px);
+}
+
+.slot-item-leave-to {
+  opacity: 0;
+  transform: translateX(-12px);
+}
+
+.slot-item-move {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+</style>

@@ -36,12 +36,18 @@ func (s *service) SuggestHug(ctx context.Context, giverID, receiverID uuid.UUID)
 	// Wrap all checks + insert in a transaction to prevent TOCTOU races
 	// (e.g., two concurrent requests both passing the pending check before either inserts).
 	err = s.tx.RunInTx(ctx, func(txCtx context.Context) error {
-		// Combined eligibility check — 3 EXISTS in a single DB round-trip.
-		hasOutgoing, pairPending, reversePending, err := s.hugRepo.CheckSuggestEligibility(txCtx, giverID, receiverID)
+		// Combined eligibility check — count + 2 EXISTS in a single DB round-trip.
+		outgoingCount, pairPending, reversePending, err := s.hugRepo.CheckSuggestEligibility(txCtx, giverID, receiverID)
 		if err != nil {
 			return err
 		}
-		if hasOutgoing {
+
+		// Check slot capacity
+		slots, err := s.userRepo.GetUserSlots(txCtx, giverID)
+		if err != nil {
+			return err
+		}
+		if outgoingCount >= slots {
 			return errorz.ErrAlreadyHasPendingHug
 		}
 		if pairPending {

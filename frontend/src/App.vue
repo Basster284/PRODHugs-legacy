@@ -63,7 +63,8 @@ function setupGlobalWsListeners() {
 
   wsCleanups.push(
     ws.on<{ hug_id: string; receiver_id: string }>('hug_declined', (data) => {
-      hugsStore.outgoingHug = null
+      hugsStore.outgoingHugs = hugsStore.outgoingHugs.filter((h) => h.id !== data.hug_id)
+      hugsStore.slotInfo.used_slots = hugsStore.outgoingHugs.length
       toast('Твоя обнимашка была отклонена')
       if (data.receiver_id) {
         hugsStore.triggerCooldownRefresh(data.receiver_id)
@@ -80,9 +81,8 @@ function setupGlobalWsListeners() {
 
   wsCleanups.push(
     ws.on<{ hug_id: string }>('hug_expired', (data) => {
-      if (hugsStore.outgoingHug?.id === data.hug_id) {
-        hugsStore.outgoingHug = null
-      }
+      hugsStore.outgoingHugs = hugsStore.outgoingHugs.filter((h) => h.id !== data.hug_id)
+      hugsStore.slotInfo.used_slots = hugsStore.outgoingHugs.length
       hugsStore.inbox = hugsStore.inbox.filter((h) => h.id !== data.hug_id)
       hugsStore.inboxCount = Math.max(0, hugsStore.inboxCount - 1)
     }),
@@ -91,7 +91,10 @@ function setupGlobalWsListeners() {
   wsCleanups.push(
     ws.on<HugFeedItem>('hug_completed', (data) => {
       if (data.giver_id === auth.user?.id) {
-        hugsStore.outgoingHug = null
+        hugsStore.outgoingHugs = hugsStore.outgoingHugs.filter(
+          (h) => h.receiver_id !== data.receiver_id,
+        )
+        hugsStore.slotInfo.used_slots = hugsStore.outgoingHugs.length
         toast.success(`Обнимашка с ${data.receiver_username} принята!`)
         hugsStore.fetchBalance()
         hugsStore.triggerCooldownRefresh(data.receiver_id)
@@ -122,7 +125,8 @@ watch(
       clearGlobalWsListeners()
       hugsStore.inboxCount = 0
       hugsStore.inbox = []
-      hugsStore.outgoingHug = null
+      hugsStore.outgoingHugs = []
+      hugsStore.slotInfo = { total_slots: 1, used_slots: 0, next_slot_cost: 10 }
     }
   },
 )

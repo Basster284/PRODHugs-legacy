@@ -33,7 +33,7 @@ WHERE h.receiver_id = $1
   AND h.created_at > now() - INTERVAL '24 hours'
 ORDER BY h.created_at DESC;
 
--- name: GetOutgoingPendingHug :one
+-- name: GetOutgoingPendingHugs :many
 SELECT h.id, h.giver_id, h.receiver_id, h.status, h.created_at, h.accepted_at,
        r.username AS receiver_username, r.gender AS receiver_gender
 FROM hugs h
@@ -41,7 +41,7 @@ JOIN users r ON r.id = h.receiver_id
 WHERE h.giver_id = $1
   AND h.status = 'pending'
   AND h.created_at > now() - INTERVAL '24 hours'
-LIMIT 1;
+ORDER BY h.created_at DESC;
 
 -- name: CountPendingHugsForUser :one
 SELECT COUNT(*) FROM hugs
@@ -68,12 +68,11 @@ SELECT EXISTS(
 
 -- name: CheckSuggestEligibility :one
 SELECT
-    EXISTS(
-        SELECT 1 FROM hugs
-        WHERE giver_id = @giver_id::uuid
-          AND status = 'pending'
-          AND created_at > now() - INTERVAL '24 hours'
-    ) AS has_outgoing,
+    (SELECT COUNT(*) FROM hugs
+     WHERE giver_id = @giver_id::uuid
+       AND status = 'pending'
+       AND created_at > now() - INTERVAL '24 hours'
+    )::int AS outgoing_count,
     EXISTS(
         SELECT 1 FROM hugs
         WHERE giver_id = @giver_id::uuid

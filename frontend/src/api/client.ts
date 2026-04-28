@@ -131,6 +131,7 @@ export const hugsApi = {
   getHistory: () => api.get('/hugs/history'),
   getFeed: (limit = 50) => api.get('/hugs/feed', { params: { limit } }),
   getActivity: () => api.get('/hugs/activity'),
+  buySlot: () => api.post('/hugs/slots/buy'),
 }
 
 // Balance

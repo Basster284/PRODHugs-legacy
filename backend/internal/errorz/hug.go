@@ -15,4 +15,5 @@ var (
 	ErrHugNotPending           = errors.New("hug is not in pending state")
 	ErrHugExpired              = errors.New("hug suggestion has expired")
 	ErrDeclineCooldownActive   = errors.New("decline cooldown is active")
+	ErrMaxSlotsReached         = errors.New("maximum hug slots reached")
 )

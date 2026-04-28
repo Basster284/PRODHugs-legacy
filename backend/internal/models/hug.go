@@ -64,10 +64,27 @@ type PendingHugInboxItem struct {
 }
 
 type OutgoingPendingHug struct {
-	ID               uuid.UUID
-	GiverID          uuid.UUID
-	ReceiverID       uuid.UUID
-	ReceiverUsername  string
-	ReceiverGender   *string
-	CreatedAt        time.Time
+	ID              uuid.UUID
+	GiverID         uuid.UUID
+	ReceiverID      uuid.UUID
+	ReceiverUsername string
+	ReceiverGender  *string
+	CreatedAt       time.Time
 }
+
+type SlotInfo struct {
+	TotalSlots   int32
+	UsedSlots    int32
+	NextSlotCost *int32 // nil if at max (5)
+}
+
+// SlotCost returns the cost for the Nth slot (1-indexed). Slot 1 is free.
+// Slots 2-5 cost 10, 20, 30, 40 respectively.
+func SlotCost(slotNumber int32) int32 {
+	if slotNumber <= 1 {
+		return 0
+	}
+	return (slotNumber - 1) * 10
+}
+
+const MaxHugSlots = 5

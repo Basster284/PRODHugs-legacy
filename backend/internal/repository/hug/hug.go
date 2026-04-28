@@ -120,18 +120,30 @@ func (r *repo) GetPendingHugsForUser(ctx context.Context, userID uuid.UUID) ([]*
 	return result, nil
 }
 
-func (r *repo) GetOutgoingPendingHug(ctx context.Context, userID uuid.UUID) (*models.OutgoingPendingHug, error) {
+func (r *repo) GetOutgoingPendingHugs(ctx context.Context, userID uuid.UUID) ([]*models.OutgoingPendingHug, error) {
 	q := repository.Queries(ctx, r.q)
 
-	row, err := q.GetOutgoingPendingHug(ctx, userID)
+	rows, err := q.GetOutgoingPendingHugs(ctx, userID)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil
-		}
 		return nil, err
 	}
 
-	return toModelOutgoingPendingHug(row), nil
+	result := make([]*models.OutgoingPendingHug, len(rows))
+	for i, row := range rows {
+		var receiverGender *string
+		if row.ReceiverGender.Valid {
+			receiverGender = &row.ReceiverGender.String
+		}
+		result[i] = &models.OutgoingPendingHug{
+			ID:              row.ID,
+			GiverID:         row.GiverID,
+			ReceiverID:      row.ReceiverID,
+			ReceiverUsername: row.ReceiverUsername,
+			ReceiverGender:  receiverGender,
+			CreatedAt:       row.CreatedAt.Time,
+		}
+	}
+	return result, nil
 }
 
 func (r *repo) CountPendingHugsForUser(ctx context.Context, userID uuid.UUID) (int64, error) {
@@ -189,7 +201,7 @@ func (r *repo) CountMutualHugs(ctx context.Context, userA, userB uuid.UUID) (*mo
 	}, nil
 }
 
-func (r *repo) CheckSuggestEligibility(ctx context.Context, giverID, receiverID uuid.UUID) (hasOutgoing, pairPending, reversePending bool, err error) {
+func (r *repo) CheckSuggestEligibility(ctx context.Context, giverID, receiverID uuid.UUID) (outgoingCount int32, pairPending, reversePending bool, err error) {
 	q := repository.Queries(ctx, r.q)
 
 	row, err := q.CheckSuggestEligibility(ctx, storage.CheckSuggestEligibilityParams{
@@ -197,10 +209,10 @@ func (r *repo) CheckSuggestEligibility(ctx context.Context, giverID, receiverID 
 		ReceiverID: receiverID,
 	})
 	if err != nil {
-		return false, false, false, err
+		return 0, false, false, err
 	}
 
-	return row.HasOutgoing, row.PairPending, row.ReversePending, nil
+	return row.OutgoingCount, row.PairPending, row.ReversePending, nil
 }
 
 func (r *repo) ExpirePendingHugs(ctx context.Context) error {

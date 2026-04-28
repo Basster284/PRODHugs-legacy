@@ -15,6 +15,8 @@ type service interface {
 	GetCooldownInfo(ctx context.Context, userA, userB uuid.UUID) (*models.HugCooldown, int32, bool, int32, error)
 	UpgradeCooldown(ctx context.Context, payerID, otherUserID uuid.UUID) (*models.HugCooldown, error)
 	GetBalance(ctx context.Context, userID uuid.UUID) (*models.Balance, error)
+	GetOutgoingHugs(ctx context.Context, userID uuid.UUID) ([]*models.OutgoingPendingHug, *models.SlotInfo, error)
+	BuyHugSlot(ctx context.Context, userID uuid.UUID) (*models.SlotInfo, int32, error)
 	GetHugHistory(ctx context.Context, userID uuid.UUID, limit, offset int32) ([]*models.HugFeedItem, error)
 	GetRecentFeed(ctx context.Context, limit int32) ([]*models.HugFeedItem, error)
 	GetHugActivity(ctx context.Context) ([]*models.HugActivityItem, error)
@@ -24,7 +26,6 @@ type service interface {
 	SearchUsers(ctx context.Context, query string, limit, offset int32) ([]*models.User, error)
 	ClaimDailyReward(ctx context.Context, userID uuid.UUID) (int32, int32, int32, bool, error)
 	GetPendingInbox(ctx context.Context, userID uuid.UUID) ([]*models.PendingHugInboxItem, error)
-	GetOutgoingPendingHug(ctx context.Context, userID uuid.UUID) (*models.OutgoingPendingHug, error)
 	GetInboxCount(ctx context.Context, userID uuid.UUID) (int64, error)
 }
 

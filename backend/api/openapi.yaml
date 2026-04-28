@@ -39,6 +39,7 @@ components:
         - HUG_EXPIRED
         - DECLINE_COOLDOWN_ACTIVE
         - PENDING_HUG_EXISTS
+        - MAX_SLOTS_REACHED
 
     Error:
       type: object
@@ -242,6 +243,42 @@ components:
         receiver_gender:
           $ref: '#/components/schemas/Gender'
         created_at: { type: string, format: date-time }
+
+    HugSlotInfo:
+      type: object
+      required:
+        - total_slots
+        - used_slots
+      properties:
+        total_slots: { type: integer }
+        used_slots: { type: integer }
+        next_slot_cost:
+          type: integer
+          nullable: true
+          description: Cost of the next slot in coins, null if at max
+
+    OutgoingHugsResponse:
+      type: object
+      required:
+        - hugs
+        - slots
+      properties:
+        hugs:
+          type: array
+          items:
+            $ref: '#/components/schemas/OutgoingPendingHug'
+        slots:
+          $ref: '#/components/schemas/HugSlotInfo'
+
+    BuySlotResponse:
+      type: object
+      required:
+        - slots
+        - new_balance
+      properties:
+        slots:
+          $ref: '#/components/schemas/HugSlotInfo'
+        new_balance: { type: integer }
 
     InboxCount:
       type: object
@@ -803,19 +840,39 @@ paths:
 
   /hugs/outgoing:
     get:
-      summary: Get current user's outgoing pending hug
-      operationId: getOutgoingHug
+      summary: Get current user's outgoing pending hugs and slot info
+      operationId: getOutgoingHugs
       security:
         - BearerAuth: ["user", "admin"]
       responses:
         '200':
-          description: Outgoing pending hug or null
+          description: Outgoing pending hugs with slot info
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OutgoingPendingHug'
+                $ref: '#/components/schemas/OutgoingHugsResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+
+  /hugs/slots/buy:
+    post:
+      summary: Buy an additional hug suggestion slot
+      operationId: buyHugSlot
+      security:
+        - BearerAuth: ["user", "admin"]
+      responses:
+        '200':
+          description: Slot purchased
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuySlotResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /hugs/inbox/count:
     get:

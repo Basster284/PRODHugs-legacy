@@ -16,7 +16,7 @@ const adminUpdateGender = `-- name: AdminUpdateGender :one
 UPDATE users
 SET gender = $2
 WHERE id = $1
-RETURNING id, username, password, role, gender, banned_at
+RETURNING id, username, password, role, gender, banned_at, hug_slots
 `
 
 type AdminUpdateGenderParams struct {
@@ -34,6 +34,7 @@ func (q *Queries) AdminUpdateGender(ctx context.Context, arg AdminUpdateGenderPa
 		&i.Role,
 		&i.Gender,
 		&i.BannedAt,
+		&i.HugSlots,
 	)
 	return i, err
 }
@@ -58,7 +59,7 @@ const adminUpdateUsername = `-- name: AdminUpdateUsername :one
 UPDATE users
 SET username = $2
 WHERE id = $1
-RETURNING id, username, password, role, gender, banned_at
+RETURNING id, username, password, role, gender, banned_at, hug_slots
 `
 
 type AdminUpdateUsernameParams struct {
@@ -76,6 +77,7 @@ func (q *Queries) AdminUpdateUsername(ctx context.Context, arg AdminUpdateUserna
 		&i.Role,
 		&i.Gender,
 		&i.BannedAt,
+		&i.HugSlots,
 	)
 	return i, err
 }
@@ -84,7 +86,7 @@ const banUser = `-- name: BanUser :one
 UPDATE users
 SET banned_at = NOW()
 WHERE id = $1 AND role != 'admin'
-RETURNING id, username, password, role, gender, banned_at
+RETURNING id, username, password, role, gender, banned_at, hug_slots
 `
 
 func (q *Queries) BanUser(ctx context.Context, id uuid.UUID) (User, error) {
@@ -97,6 +99,7 @@ func (q *Queries) BanUser(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.Role,
 		&i.Gender,
 		&i.BannedAt,
+		&i.HugSlots,
 	)
 	return i, err
 }
@@ -128,7 +131,7 @@ INSERT INTO users (username, password, role, gender)
 VALUES (
     $1, $2, $3, $4
 )
-RETURNING id, username, password, role, gender, banned_at
+RETURNING id, username, password, role, gender, banned_at, hug_slots
 `
 
 type CreateUserParams struct {
@@ -153,6 +156,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Role,
 		&i.Gender,
 		&i.BannedAt,
+		&i.HugSlots,
 	)
 	return i, err
 }
@@ -276,7 +280,7 @@ func (q *Queries) GetRecentHugsFeed(ctx context.Context, lim int32) ([]GetRecent
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, username, password, role, gender, banned_at
+SELECT id, username, password, role, gender, banned_at, hug_slots
 FROM users
 WHERE id = $1
 `
@@ -291,12 +295,13 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.Role,
 		&i.Gender,
 		&i.BannedAt,
+		&i.HugSlots,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, username, password, role, gender, banned_at
+SELECT id, username, password, role, gender, banned_at, hug_slots
 FROM users
 WHERE username = $1
 `
@@ -311,8 +316,20 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.Role,
 		&i.Gender,
 		&i.BannedAt,
+		&i.HugSlots,
 	)
 	return i, err
+}
+
+const getUserSlots = `-- name: GetUserSlots :one
+SELECT hug_slots FROM users WHERE id = $1
+`
+
+func (q *Queries) GetUserSlots(ctx context.Context, id uuid.UUID) (int32, error) {
+	row := q.db.QueryRow(ctx, getUserSlots, id)
+	var hug_slots int32
+	err := row.Scan(&hug_slots)
+	return hug_slots, err
 }
 
 const getUserStats = `-- name: GetUserStats :one
@@ -336,6 +353,20 @@ func (q *Queries) GetUserStats(ctx context.Context, userID uuid.UUID) (GetUserSt
 	var i GetUserStatsRow
 	err := row.Scan(&i.HugsGiven, &i.HugsReceived, &i.TotalHugs)
 	return i, err
+}
+
+const incrementUserSlots = `-- name: IncrementUserSlots :one
+UPDATE users
+SET hug_slots = hug_slots + 1
+WHERE id = $1 AND hug_slots < 5
+RETURNING hug_slots
+`
+
+func (q *Queries) IncrementUserSlots(ctx context.Context, id uuid.UUID) (int32, error) {
+	row := q.db.QueryRow(ctx, incrementUserSlots, id)
+	var hug_slots int32
+	err := row.Scan(&hug_slots)
+	return hug_slots, err
 }
 
 const listAllUsers = `-- name: ListAllUsers :many
@@ -478,7 +509,7 @@ const unbanUser = `-- name: UnbanUser :one
 UPDATE users
 SET banned_at = NULL
 WHERE id = $1
-RETURNING id, username, password, role, gender, banned_at
+RETURNING id, username, password, role, gender, banned_at, hug_slots
 `
 
 func (q *Queries) UnbanUser(ctx context.Context, id uuid.UUID) (User, error) {
@@ -491,6 +522,7 @@ func (q *Queries) UnbanUser(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.Role,
 		&i.Gender,
 		&i.BannedAt,
+		&i.HugSlots,
 	)
 	return i, err
 }
@@ -515,7 +547,7 @@ const updateUserSettings = `-- name: UpdateUserSettings :one
 UPDATE users
 SET gender = $2
 WHERE id = $1
-RETURNING id, username, password, role, gender, banned_at
+RETURNING id, username, password, role, gender, banned_at, hug_slots
 `
 
 type UpdateUserSettingsParams struct {
@@ -533,6 +565,7 @@ func (q *Queries) UpdateUserSettings(ctx context.Context, arg UpdateUserSettings
 		&i.Role,
 		&i.Gender,
 		&i.BannedAt,
+		&i.HugSlots,
 	)
 	return i, err
 }

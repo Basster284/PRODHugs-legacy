@@ -3,7 +3,6 @@ package hug
 import (
 	"context"
 	"errors"
-	"net/http"
 	"time"
 
 	"go-service-template/internal/errorz"
@@ -174,40 +173,76 @@ func (h *HugHandler) GetHugInboxCount(ctx context.Context, req v1.GetHugInboxCou
 	return v1.GetHugInboxCount200JSONResponse{Count: int(count)}, nil
 }
 
-type getOutgoingHugNullResponse struct{}
-
-func (r getOutgoingHugNullResponse) VisitGetOutgoingHugResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	_, err := w.Write([]byte("null"))
-	return err
-}
-
-func (h *HugHandler) GetOutgoingHug(ctx context.Context, req v1.GetOutgoingHugRequestObject) (v1.GetOutgoingHugResponseObject, error) {
+func (h *HugHandler) GetOutgoingHugs(ctx context.Context, req v1.GetOutgoingHugsRequestObject) (v1.GetOutgoingHugsResponseObject, error) {
 	userID := ctx.Value(middleware.UserIDContextKey).(uuid.UUID)
 
-	hug, err := h.svc.GetOutgoingPendingHug(ctx, userID)
+	hugs, slotInfo, err := h.svc.GetOutgoingHugs(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	if hug == nil {
-		return getOutgoingHugNullResponse{}, nil
+	items := make([]v1.OutgoingPendingHug, len(hugs))
+	for i, hug := range hugs {
+		item := v1.OutgoingPendingHug{
+			Id:              hug.ID,
+			GiverId:         hug.GiverID,
+			ReceiverId:      hug.ReceiverID,
+			ReceiverUsername: hug.ReceiverUsername,
+			CreatedAt:       hug.CreatedAt,
+		}
+		if hug.ReceiverGender != nil {
+			g := v1.Gender(*hug.ReceiverGender)
+			item.ReceiverGender = &g
+		}
+		items[i] = item
 	}
 
-	item := v1.OutgoingPendingHug{
-		Id:               hug.ID,
-		GiverId:          hug.GiverID,
-		ReceiverId:       hug.ReceiverID,
-		ReceiverUsername: hug.ReceiverUsername,
-		CreatedAt:        hug.CreatedAt,
+	slots := v1.HugSlotInfo{
+		TotalSlots: int(slotInfo.TotalSlots),
+		UsedSlots:  int(slotInfo.UsedSlots),
 	}
-	if hug.ReceiverGender != nil {
-		g := v1.Gender(*hug.ReceiverGender)
-		item.ReceiverGender = &g
+	if slotInfo.NextSlotCost != nil {
+		cost := int(*slotInfo.NextSlotCost)
+		slots.NextSlotCost = &cost
 	}
 
-	return v1.GetOutgoingHug200JSONResponse(item), nil
+	return v1.GetOutgoingHugs200JSONResponse{
+		Hugs:  items,
+		Slots: slots,
+	}, nil
+}
+
+func (h *HugHandler) BuyHugSlot(ctx context.Context, req v1.BuyHugSlotRequestObject) (v1.BuyHugSlotResponseObject, error) {
+	userID := ctx.Value(middleware.UserIDContextKey).(uuid.UUID)
+
+	slotInfo, newBalance, err := h.svc.BuyHugSlot(ctx, userID)
+	if err != nil {
+		if errors.Is(err, errorz.ErrMaxSlotsReached) {
+			return v1.BuyHugSlot409JSONResponse{
+				ConflictJSONResponse: v1.ConflictJSONResponse{Code: v1.MAXSLOTSREACHED, Message: "Maximum hug slots reached"},
+			}, nil
+		}
+		if errors.Is(err, errorz.ErrInsufficientBalance) {
+			return v1.BuyHugSlot400JSONResponse{
+				BadRequestJSONResponse: v1.BadRequestJSONResponse{Code: v1.INSUFFICIENTBALANCE, Message: "Insufficient balance"},
+			}, nil
+		}
+		return nil, err
+	}
+
+	slots := v1.HugSlotInfo{
+		TotalSlots: int(slotInfo.TotalSlots),
+		UsedSlots:  int(slotInfo.UsedSlots),
+	}
+	if slotInfo.NextSlotCost != nil {
+		cost := int(*slotInfo.NextSlotCost)
+		slots.NextSlotCost = &cost
+	}
+
+	return v1.BuyHugSlot200JSONResponse{
+		Slots:      slots,
+		NewBalance: int(newBalance),
+	}, nil
 }
 
 func (h *HugHandler) GetCooldown(ctx context.Context, req v1.GetCooldownRequestObject) (v1.GetCooldownResponseObject, error) {
