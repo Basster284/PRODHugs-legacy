@@ -35,7 +35,7 @@ export function useWebSocket() {
     if (!token) return
 
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const url = `${proto}//${window.location.host}/api/v1/ws?token=${token}`
+    const url = `${proto}//${window.location.host}/api/v1/ws`
 
     // Increment generation so stale onclose handlers from previous sockets are ignored.
     const gen = ++connectGeneration
@@ -45,6 +45,7 @@ export function useWebSocket() {
     socket.value = ws
 
     ws.onopen = () => {
+      ws.send(JSON.stringify({ type: 'auth', token }))
       connected.value = true
       // Clear any pending reconnect timeout
       if (reconnectTimeout) {
