@@ -149,8 +149,8 @@ onUnmounted(() => {
   <div class="mx-auto max-w-2xl space-y-4 sm:space-y-6">
     <div class="flex items-center justify-between gap-2">
       <div class="min-w-0">
-        <h1 class="text-xl font-semibold tracking-tight sm:text-2xl">Лента</h1>
-        <p class="text-xs text-muted-foreground sm:text-sm">Обнимашки в реальном времени</p>
+        <h1 class="text-2xl font-semibold tracking-tight">Лента</h1>
+        <p class="text-muted-foreground">Обнимашки в реальном времени</p>
       </div>
       <Badge
         :variant="ws.connected.value ? 'secondary' : 'destructive'"
@@ -169,7 +169,7 @@ onUnmounted(() => {
     <div class="rounded-md border p-3 sm:p-4">
       <div class="mb-3 flex items-center justify-between gap-2">
         <div class="min-w-0">
-          <h2 class="text-sm font-medium">Активность за 24 часа</h2>
+          <h2 class="text-base font-medium">Активность за 24 часа</h2>
           <p class="hidden text-xs text-muted-foreground sm:block">Обнимашки по часам</p>
         </div>
         <div v-if="!chartLoading && activity.length > 0" class="shrink-0 text-right">
@@ -245,7 +245,7 @@ onUnmounted(() => {
       <Transition name="indicator">
         <button
           v-if="pendingCount > 0"
-          class="sticky top-2 z-20 mx-auto flex cursor-pointer items-center gap-1.5 rounded-full border border-prod-yellow/30 bg-card/90 px-3 py-2 text-xs font-medium text-prod-yellow shadow-lg backdrop-blur-sm transition-all hover:bg-card hover:shadow-xl active:scale-95 sm:px-4 sm:py-1.5 sm:text-sm"
+          class="sticky top-2 z-20 mx-auto flex cursor-pointer items-center gap-1.5 rounded-full border border-prod-yellow/30 bg-card/90 px-3 py-1.5 text-sm font-medium text-prod-yellow shadow-lg backdrop-blur-sm transition-all hover:bg-card hover:shadow-xl active:scale-95 sm:px-4"
           @click="flushPending"
         >
           <ChevronUp class="size-3.5" />
@@ -262,7 +262,7 @@ onUnmounted(() => {
             :class="{ 'feed-new': newItemIds.has(item.id) }"
             @animationend="newItemIds.delete(item.id)"
           >
-            <div class="min-w-0 flex-1 text-xs leading-relaxed sm:text-sm sm:leading-normal">
+            <div class="min-w-0 flex-1 text-sm">
               <RouterLink :to="`/user/${item.giver_id}`" class="font-medium hover:underline">{{
                 item.giver_username
               }}</RouterLink>
@@ -271,7 +271,7 @@ onUnmounted(() => {
                 item.receiver_username
               }}</RouterLink>
             </div>
-            <span class="shrink-0 text-[10px] text-muted-foreground tabular-nums sm:text-xs">
+            <span class="shrink-0 text-xs text-muted-foreground tabular-nums">
               {{ timeAgo(item.created_at) }}
             </span>
           </div>
