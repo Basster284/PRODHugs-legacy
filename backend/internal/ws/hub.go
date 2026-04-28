@@ -5,12 +5,20 @@ import (
 	"log/slog"
 	"net/http"
 	"sync"
+	"time"
 
 	"go-service-template/internal/jwt"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/net/websocket"
+)
+
+const (
+	// How often the server sends a keepalive ping to clients.
+	pingInterval = 30 * time.Second
+	// How long to wait for any data from the client before considering it dead.
+	readTimeout = 90 * time.Second
 )
 
 // WSMessage is the typed envelope for all outgoing WebSocket messages.
@@ -65,20 +73,35 @@ func (h *Hub) HandleWS(c echo.Context) error {
 
 		h.register(cl)
 
-		// Write pump
+		// Write pump: sends queued messages and periodic keepalive pings.
 		done := make(chan struct{})
 		go func() {
 			defer close(done)
-			for msg := range cl.send {
-				if _, err := ws.Write(msg); err != nil {
-					return
+			pingTicker := time.NewTicker(pingInterval)
+			defer pingTicker.Stop()
+			pingPayload := []byte(`{"type":"ping"}`)
+
+			for {
+				select {
+				case msg, ok := <-cl.send:
+					if !ok {
+						return // channel closed
+					}
+					if _, err := ws.Write(msg); err != nil {
+						return
+					}
+				case <-pingTicker.C:
+					if _, err := ws.Write(pingPayload); err != nil {
+						return
+					}
 				}
 			}
 		}()
 
-		// Read pump (keep connection alive, discard messages)
+		// Read pump: keeps the connection alive and detects dead clients via deadline.
 		buf := make([]byte, 512)
 		for {
+			_ = ws.SetReadDeadline(time.Now().Add(readTimeout))
 			if _, err := ws.Read(buf); err != nil {
 				break
 			}

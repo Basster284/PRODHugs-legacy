@@ -66,6 +66,29 @@ SELECT EXISTS(
       AND created_at > now() - INTERVAL '24 hours'
 ) AS has_pending;
 
+-- name: CheckSuggestEligibility :one
+SELECT
+    EXISTS(
+        SELECT 1 FROM hugs
+        WHERE giver_id = @giver_id::uuid
+          AND status = 'pending'
+          AND created_at > now() - INTERVAL '24 hours'
+    ) AS has_outgoing,
+    EXISTS(
+        SELECT 1 FROM hugs
+        WHERE giver_id = @giver_id::uuid
+          AND receiver_id = @receiver_id::uuid
+          AND status = 'pending'
+          AND created_at > now() - INTERVAL '24 hours'
+    ) AS pair_pending,
+    EXISTS(
+        SELECT 1 FROM hugs
+        WHERE giver_id = @receiver_id::uuid
+          AND receiver_id = @giver_id::uuid
+          AND status = 'pending'
+          AND created_at > now() - INTERVAL '24 hours'
+    ) AS reverse_pending;
+
 -- name: ExpirePendingHugs :exec
 UPDATE hugs SET status = 'expired'
 WHERE status = 'pending'
@@ -83,9 +106,10 @@ SELECT
 FROM hugs h
 JOIN users g ON g.id = h.giver_id
 JOIN users r ON r.id = h.receiver_id
-WHERE (h.giver_id = $1 OR h.receiver_id = $1)
+WHERE (h.giver_id = @user_id::uuid OR h.receiver_id = @user_id::uuid)
   AND h.status = 'completed'
-ORDER BY h.created_at DESC;
+ORDER BY h.created_at DESC
+LIMIT @lim::int OFFSET @off::int;
 
 -- name: CountHugsReceived :one
 SELECT COUNT(*)

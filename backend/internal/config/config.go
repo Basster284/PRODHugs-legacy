@@ -18,8 +18,10 @@ type httpServer struct {
 }
 
 type postgres struct {
-	URL      string `env:"POSTGRES_URL" env-required:"true"`
-	MaxConns int32  `env:"POSTGRES_MAX_CONNS" env-default:"100"`
+	URL             string `env:"POSTGRES_URL" env-required:"true"`
+	MaxConns        int32  `env:"POSTGRES_MAX_CONNS" env-default:"100"`
+	MinConns        int32  `env:"POSTGRES_MIN_CONNS" env-default:"5"`
+	MaxConnLifetime int    `env:"POSTGRES_MAX_CONN_LIFETIME" env-default:"3600"` // seconds
 }
 
 type s3 struct {

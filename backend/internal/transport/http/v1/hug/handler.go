@@ -15,7 +15,7 @@ type service interface {
 	GetCooldownInfo(ctx context.Context, userA, userB uuid.UUID) (*models.HugCooldown, int32, bool, int32, error)
 	UpgradeCooldown(ctx context.Context, payerID, otherUserID uuid.UUID) (*models.HugCooldown, error)
 	GetBalance(ctx context.Context, userID uuid.UUID) (*models.Balance, error)
-	GetHugHistory(ctx context.Context, userID uuid.UUID) ([]*models.HugFeedItem, error)
+	GetHugHistory(ctx context.Context, userID uuid.UUID, limit, offset int32) ([]*models.HugFeedItem, error)
 	GetRecentFeed(ctx context.Context, limit int32) ([]*models.HugFeedItem, error)
 	GetHugActivity(ctx context.Context) ([]*models.HugActivityItem, error)
 	GetLeaderboard(ctx context.Context, limit, offset int32) ([]*models.LeaderboardEntry, error)

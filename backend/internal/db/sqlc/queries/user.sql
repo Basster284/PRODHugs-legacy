@@ -49,10 +49,12 @@ LIMIT @lim::int OFFSET @off::int;
 
 -- name: GetUserStats :one
 SELECT
-    (SELECT COUNT(*) FROM hugs WHERE hugs.giver_id = @user_id::uuid AND hugs.status = 'completed')::bigint AS hugs_given,
-    (SELECT COUNT(*) FROM hugs WHERE hugs.receiver_id = @user_id::uuid AND hugs.status = 'completed')::bigint AS hugs_received,
-    (SELECT COUNT(*) FROM hugs WHERE hugs.giver_id = @user_id::uuid AND hugs.status = 'completed')::bigint +
-    (SELECT COUNT(*) FROM hugs WHERE hugs.receiver_id = @user_id::uuid AND hugs.status = 'completed')::bigint AS total_hugs;
+    COUNT(*) FILTER (WHERE giver_id = @user_id::uuid)::bigint AS hugs_given,
+    COUNT(*) FILTER (WHERE receiver_id = @user_id::uuid)::bigint AS hugs_received,
+    COUNT(*)::bigint AS total_hugs
+FROM hugs
+WHERE (giver_id = @user_id::uuid OR receiver_id = @user_id::uuid)
+  AND status = 'completed';
 
 -- name: GetRecentHugsFeed :many
 SELECT

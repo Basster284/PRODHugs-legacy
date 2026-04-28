@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"go-service-template/internal/cache"
 	"go-service-template/internal/models"
 
 	"github.com/google/uuid"
@@ -15,12 +16,13 @@ type hugRepo interface {
 	DeclineHug(ctx context.Context, hugID, receiverID uuid.UUID) (*models.Hug, error)
 	CancelHug(ctx context.Context, hugID, giverID uuid.UUID) (*models.Hug, error)
 	GetHugByID(ctx context.Context, hugID uuid.UUID) (*models.Hug, error)
-	ListHugsByUser(ctx context.Context, userID uuid.UUID) ([]*models.HugFeedItem, error)
+	ListHugsByUser(ctx context.Context, userID uuid.UUID, limit, offset int32) ([]*models.HugFeedItem, error)
 	GetPendingHugsForUser(ctx context.Context, userID uuid.UUID) ([]*models.PendingHugInboxItem, error)
 	GetOutgoingPendingHug(ctx context.Context, userID uuid.UUID) (*models.OutgoingPendingHug, error)
 	CountPendingHugsForUser(ctx context.Context, userID uuid.UUID) (int64, error)
 	HasOutgoingPendingHug(ctx context.Context, userID uuid.UUID) (bool, error)
 	HasPendingHugForPair(ctx context.Context, giverID, receiverID uuid.UUID) (bool, error)
+	CheckSuggestEligibility(ctx context.Context, giverID, receiverID uuid.UUID) (hasOutgoing, pairPending, reversePending bool, err error)
 	GetCooldown(ctx context.Context, userA, userB uuid.UUID) (*models.HugCooldown, error)
 	UpsertCooldown(ctx context.Context, userA, userB uuid.UUID, cooldownSeconds int32) (*models.HugCooldown, error)
 	ReduceCooldown(ctx context.Context, userA, userB uuid.UUID, reduction int32) (*models.HugCooldown, error)
@@ -31,6 +33,7 @@ type hugRepo interface {
 	GetUserStats(ctx context.Context, userID uuid.UUID) (*models.UserStats, error)
 	CountMutualHugs(ctx context.Context, userA, userB uuid.UUID) (*models.MutualHugStats, error)
 	SearchUsers(ctx context.Context, query string, limit, offset int32) ([]*models.User, error)
+	ExpirePendingHugs(ctx context.Context) error
 }
 
 type balanceRepo interface {
@@ -70,15 +73,21 @@ type service struct {
 	onHugSuggestion HugSuggestionCallback
 	onHugDeclined   HugDeclinedCallback
 	onHugCancelled  HugCancelledCallback
+
+	// In-memory caches for hot, stale-tolerant data.
+	leaderboardCache *cache.TTL[string, []*models.LeaderboardEntry]
+	activityCache    *cache.TTL[string, []*models.HugActivityItem]
 }
 
 func New(hugRepo hugRepo, balanceRepo balanceRepo, dailyRepo dailyRewardRepo, userRepo userRepo, tx transactor) *service {
 	return &service{
-		hugRepo:     hugRepo,
-		balanceRepo: balanceRepo,
-		dailyRepo:   dailyRepo,
-		userRepo:    userRepo,
-		tx:          tx,
+		hugRepo:          hugRepo,
+		balanceRepo:      balanceRepo,
+		dailyRepo:        dailyRepo,
+		userRepo:         userRepo,
+		tx:               tx,
+		leaderboardCache: cache.New[string, []*models.LeaderboardEntry](30 * time.Second),
+		activityCache:    cache.New[string, []*models.HugActivityItem](2 * time.Minute),
 	}
 }
 

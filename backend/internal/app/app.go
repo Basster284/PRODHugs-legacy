@@ -44,11 +44,12 @@ import (
 )
 
 type App struct {
-	cfg    *config.Config
-	l      *slog.Logger
-	e      *echo.Echo
-	dbPool *pgxpool.Pool
-	hub    *ws.Hub
+	cfg      *config.Config
+	l        *slog.Logger
+	e        *echo.Echo
+	dbPool   *pgxpool.Pool
+	hub      *ws.Hub
+	stopJobs context.CancelFunc
 }
 
 // New creates and initializes a new instance of App
@@ -130,6 +131,24 @@ func New(ctx context.Context, cfg *config.Config, l *slog.Logger) (*App, error) 
 	// WebSocket endpoint (outside OpenAPI validation)
 	a.e.GET("/api/v1/ws", a.hub.HandleWS)
 
+	// Background job: expire stale pending hugs every 5 minutes.
+	jobCtx, jobCancel := context.WithCancel(context.Background())
+	a.stopJobs = jobCancel
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-jobCtx.Done():
+				return
+			case <-ticker.C:
+				if err := hugService.ExpirePendingHugs(jobCtx); err != nil {
+					a.l.Error("failed to expire pending hugs", "error", err)
+				}
+			}
+		}
+	}()
+
 	return a, nil
 }
 
@@ -144,6 +163,11 @@ func (a *App) Start(errChan chan<- error) {
 // Stop performs a graceful shutdown for all components
 func (a *App) Stop(ctx context.Context) error {
 	a.l.Info("[!] Shutting down...")
+
+	// Cancel background jobs first.
+	if a.stopJobs != nil {
+		a.stopJobs()
+	}
 
 	var stopErr error
 
@@ -163,21 +187,19 @@ func (a *App) Stop(ctx context.Context) error {
 	return nil
 }
 
-// initDB initializes a new pool for PostgreSQL db
-func initDB(ctx context.Context, dbURL string, maxConns int32) (*pgxpool.Pool, error) {
-	pool, err := pgxpool.New(ctx, dbURL)
+// initDB sets up PostgreSQL db with properly configured pool settings.
+func (a *App) initDB(ctx context.Context) error {
+	poolCfg, err := pgxpool.ParseConfig(a.cfg.Postgres.URL)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to parse db config: %w", err)
 	}
 
-	pool.Config().MaxConns = maxConns
+	poolCfg.MaxConns = a.cfg.Postgres.MaxConns
+	poolCfg.MinConns = a.cfg.Postgres.MinConns
+	poolCfg.MaxConnLifetime = time.Duration(a.cfg.Postgres.MaxConnLifetime) * time.Second
+	poolCfg.MaxConnIdleTime = 5 * time.Minute
 
-	return pool, nil
-}
-
-// initDB sets up PostgreSQL db
-func (a *App) initDB(ctx context.Context) error {
-	dbPool, err := initDB(ctx, a.cfg.Postgres.URL, a.cfg.Postgres.MaxConns)
+	dbPool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
 		return fmt.Errorf("failed to init db connection: %w", err)
 	}
@@ -222,14 +244,14 @@ func (a *App) initEcho() error {
 					slog.String("uri", v.URI),
 					slog.Int("status", v.Status),
 					slog.String("ip", v.RemoteIP),
-					slog.String("latency", time.Now().Sub(v.StartTime).String()),
+					slog.String("latency", time.Since(v.StartTime).String()),
 				)
 			} else {
 				a.l.LogAttrs(context.Background(), slog.LevelError, "REQUEST_ERROR",
 					slog.String("uri", v.URI),
 					slog.Int("status", v.Status),
 					slog.String("ip", v.RemoteIP),
-					slog.String("latency", time.Now().Sub(v.StartTime).String()),
+					slog.String("latency", time.Since(v.StartTime).String()),
 					slog.String("err", v.Error.Error()),
 				)
 			}

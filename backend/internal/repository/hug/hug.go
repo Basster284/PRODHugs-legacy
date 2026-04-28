@@ -152,10 +152,14 @@ func (r *repo) HasPendingHugForPair(ctx context.Context, giverID, receiverID uui
 	})
 }
 
-func (r *repo) ListHugsByUser(ctx context.Context, userID uuid.UUID) ([]*models.HugFeedItem, error) {
+func (r *repo) ListHugsByUser(ctx context.Context, userID uuid.UUID, limit, offset int32) ([]*models.HugFeedItem, error) {
 	q := repository.Queries(ctx, r.q)
 
-	rows, err := q.ListHugsByUser(ctx, userID)
+	rows, err := q.ListHugsByUser(ctx, storage.ListHugsByUserParams{
+		UserID: userID,
+		Lim:    limit,
+		Off:    offset,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -183,6 +187,25 @@ func (r *repo) CountMutualHugs(ctx context.Context, userA, userB uuid.UUID) (*mo
 		Given:    row.MutualGiven,
 		Received: row.MutualReceived,
 	}, nil
+}
+
+func (r *repo) CheckSuggestEligibility(ctx context.Context, giverID, receiverID uuid.UUID) (hasOutgoing, pairPending, reversePending bool, err error) {
+	q := repository.Queries(ctx, r.q)
+
+	row, err := q.CheckSuggestEligibility(ctx, storage.CheckSuggestEligibilityParams{
+		GiverID:    giverID,
+		ReceiverID: receiverID,
+	})
+	if err != nil {
+		return false, false, false, err
+	}
+
+	return row.HasOutgoing, row.PairPending, row.ReversePending, nil
+}
+
+func (r *repo) ExpirePendingHugs(ctx context.Context) error {
+	q := repository.Queries(ctx, r.q)
+	return q.ExpirePendingHugs(ctx)
 }
 
 func (r *repo) CountHugsGiven(ctx context.Context, userID uuid.UUID) (int64, error) {

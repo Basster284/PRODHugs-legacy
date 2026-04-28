@@ -98,7 +98,7 @@ func toModelUserStats(row storage.GetUserStatsRow) *models.UserStats {
 	return &models.UserStats{
 		HugsGiven:    row.HugsGiven,
 		HugsReceived: row.HugsReceived,
-		TotalHugs:    row.TotalHugs,
+		TotalHugs:    int32(row.TotalHugs),
 		Rank:         models.GetRank(int32(row.TotalHugs)),
 	}
 }

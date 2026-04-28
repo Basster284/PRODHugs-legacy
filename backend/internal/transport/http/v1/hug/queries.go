@@ -43,7 +43,9 @@ func (h *HugHandler) ClaimDailyReward(ctx context.Context, req v1.ClaimDailyRewa
 func (h *HugHandler) GetHugHistory(ctx context.Context, req v1.GetHugHistoryRequestObject) (v1.GetHugHistoryResponseObject, error) {
 	userID := ctx.Value(middleware.UserIDContextKey).(uuid.UUID)
 
-	hugs, err := h.svc.GetHugHistory(ctx, userID)
+	// Default: last 100 hugs. The endpoint doesn't currently expose pagination
+	// params in the OpenAPI spec, but the service/repo now support it.
+	hugs, err := h.svc.GetHugHistory(ctx, userID, 100, 0)
 	if err != nil {
 		return nil, err
 	}

@@ -34,9 +34,7 @@ func (r *repo) GetBalance(ctx context.Context, userID uuid.UUID) (*models.Balanc
 func (r *repo) AddBalance(ctx context.Context, userID uuid.UUID, delta int32) (*models.Balance, error) {
 	q := repository.Queries(ctx, r.q)
 
-	// Ensure balance row exists (safe under concurrency)
-	_, _ = q.EnsureBalance(ctx, userID)
-
+	// INSERT ... ON CONFLICT DO UPDATE handles both creation and increment in a single query.
 	b, err := q.AddBalance(ctx, storage.AddBalanceParams{
 		UserID: userID,
 		Delta:  delta,

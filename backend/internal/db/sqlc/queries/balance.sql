@@ -9,9 +9,10 @@ VALUES ($1, $2)
 RETURNING user_id, amount, updated_at;
 
 -- name: AddBalance :one
-UPDATE balances
-SET amount = amount + @delta::int, updated_at = now()
-WHERE user_id = $1
+INSERT INTO balances (user_id, amount, updated_at)
+VALUES ($1, @delta::int, now())
+ON CONFLICT (user_id)
+DO UPDATE SET amount = balances.amount + @delta::int, updated_at = now()
 RETURNING user_id, amount, updated_at;
 
 -- name: DeductBalance :one

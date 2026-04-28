@@ -2,17 +2,20 @@ package hug
 
 import (
 	"context"
+	"fmt"
+
 	"go-service-template/internal/models"
 
 	"github.com/google/uuid"
+	"golang.org/x/sync/errgroup"
 )
 
 func (s *service) GetBalance(ctx context.Context, userID uuid.UUID) (*models.Balance, error) {
 	return s.balanceRepo.GetBalance(ctx, userID)
 }
 
-func (s *service) GetHugHistory(ctx context.Context, userID uuid.UUID) ([]*models.HugFeedItem, error) {
-	return s.hugRepo.ListHugsByUser(ctx, userID)
+func (s *service) GetHugHistory(ctx context.Context, userID uuid.UUID, limit, offset int32) ([]*models.HugFeedItem, error) {
+	return s.hugRepo.ListHugsByUser(ctx, userID, limit, offset)
 }
 
 func (s *service) GetRecentFeed(ctx context.Context, limit int32) ([]*models.HugFeedItem, error) {
@@ -20,11 +23,33 @@ func (s *service) GetRecentFeed(ctx context.Context, limit int32) ([]*models.Hug
 }
 
 func (s *service) GetHugActivity(ctx context.Context) ([]*models.HugActivityItem, error) {
-	return s.hugRepo.GetHugActivity(ctx)
+	const cacheKey = "activity"
+	if cached, ok := s.activityCache.Get(cacheKey); ok {
+		return cached, nil
+	}
+
+	items, err := s.hugRepo.GetHugActivity(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	s.activityCache.Set(cacheKey, items)
+	return items, nil
 }
 
 func (s *service) GetLeaderboard(ctx context.Context, limit, offset int32) ([]*models.LeaderboardEntry, error) {
-	return s.hugRepo.GetLeaderboard(ctx, limit, offset)
+	cacheKey := fmt.Sprintf("%d:%d", limit, offset)
+	if cached, ok := s.leaderboardCache.Get(cacheKey); ok {
+		return cached, nil
+	}
+
+	entries, err := s.hugRepo.GetLeaderboard(ctx, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	s.leaderboardCache.Set(cacheKey, entries)
+	return entries, nil
 }
 
 func (s *service) GetUserStats(ctx context.Context, userID uuid.UUID) (*models.UserStats, error) {
@@ -32,27 +57,44 @@ func (s *service) GetUserStats(ctx context.Context, userID uuid.UUID) (*models.U
 }
 
 func (s *service) GetUserProfile(ctx context.Context, userID uuid.UUID, viewerID *uuid.UUID) (*models.User, *models.UserStats, *models.Balance, *models.MutualHugStats, error) {
-	user, err := s.userRepo.GetByID(ctx, userID)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
+	var (
+		user    *models.User
+		stats   *models.UserStats
+		balance *models.Balance
+		mutual  *models.MutualHugStats
+	)
 
-	stats, err := s.hugRepo.GetUserStats(ctx, userID)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
+	g, gCtx := errgroup.WithContext(ctx)
 
-	balance, err := s.balanceRepo.GetBalance(ctx, userID)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
+	g.Go(func() error {
+		var err error
+		user, err = s.userRepo.GetByID(gCtx, userID)
+		return err
+	})
 
-	var mutual *models.MutualHugStats
+	g.Go(func() error {
+		var err error
+		stats, err = s.hugRepo.GetUserStats(gCtx, userID)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		balance, err = s.balanceRepo.GetBalance(gCtx, userID)
+		return err
+	})
+
 	if viewerID != nil && *viewerID != userID {
-		mutual, err = s.hugRepo.CountMutualHugs(ctx, userID, *viewerID)
-		if err != nil {
-			return nil, nil, nil, nil, err
-		}
+		vid := *viewerID
+		g.Go(func() error {
+			var err error
+			mutual, err = s.hugRepo.CountMutualHugs(gCtx, userID, vid)
+			return err
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, nil, nil, nil, err
 	}
 
 	return user, stats, balance, mutual, nil
@@ -60,6 +102,10 @@ func (s *service) GetUserProfile(ctx context.Context, userID uuid.UUID, viewerID
 
 func (s *service) SearchUsers(ctx context.Context, query string, limit, offset int32) ([]*models.User, error) {
 	return s.hugRepo.SearchUsers(ctx, query, limit, offset)
+}
+
+func (s *service) ExpirePendingHugs(ctx context.Context) error {
+	return s.hugRepo.ExpirePendingHugs(ctx)
 }
 
 func (s *service) GetPendingInbox(ctx context.Context, userID uuid.UUID) ([]*models.PendingHugInboxItem, error) {

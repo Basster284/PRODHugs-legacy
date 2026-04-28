@@ -35,28 +35,16 @@ func (s *service) SuggestHug(ctx context.Context, giverID, receiverID uuid.UUID)
 	// Wrap all checks + insert in a transaction to prevent TOCTOU races
 	// (e.g., two concurrent requests both passing the pending check before either inserts).
 	err = s.tx.RunInTx(ctx, func(txCtx context.Context) error {
-		// Check if giver already has an outgoing pending hug (global limit of 1)
-		hasPending, err := s.hugRepo.HasOutgoingPendingHug(txCtx, giverID)
+		// Combined eligibility check — 3 EXISTS in a single DB round-trip.
+		hasOutgoing, pairPending, reversePending, err := s.hugRepo.CheckSuggestEligibility(txCtx, giverID, receiverID)
 		if err != nil {
 			return err
 		}
-		if hasPending {
+		if hasOutgoing {
 			return errorz.ErrAlreadyHasPendingHug
-		}
-
-		// Check if there's already a pending hug for this specific pair
-		pairPending, err := s.hugRepo.HasPendingHugForPair(txCtx, giverID, receiverID)
-		if err != nil {
-			return err
 		}
 		if pairPending {
 			return errorz.ErrPendingHugExists
-		}
-
-		// Check if the receiver has already suggested a hug to the giver
-		reversePending, err := s.hugRepo.HasPendingHugForPair(txCtx, receiverID, giverID)
-		if err != nil {
-			return err
 		}
 		if reversePending {
 			return errorz.ErrReversePendingHugExists
@@ -89,23 +77,26 @@ func (s *service) SuggestHug(ctx context.Context, giverID, receiverID uuid.UUID)
 		return nil, err
 	}
 
-	// Fire WebSocket suggestion notification to receiver (outside tx — fire-and-forget)
+	// Fire WebSocket notification asynchronously to avoid blocking the HTTP response.
 	if s.onHugSuggestion != nil {
-		giver, _ := s.userRepo.GetByID(ctx, giverID)
-		giverUsername := ""
-		var giverGender *string
-		if giver != nil {
-			giverUsername = giver.Username
-			giverGender = giver.Gender
-		}
-		s.onHugSuggestion(receiverID, &models.PendingHugInboxItem{
-			ID:            h.ID,
-			GiverID:       h.GiverID,
-			ReceiverID:    h.ReceiverID,
-			GiverUsername: giverUsername,
-			GiverGender:   giverGender,
-			CreatedAt:     h.CreatedAt,
-		})
+		hugCopy := *h
+		go func() {
+			giver, _ := s.userRepo.GetByID(context.WithoutCancel(ctx), giverID)
+			giverUsername := ""
+			var giverGender *string
+			if giver != nil {
+				giverUsername = giver.Username
+				giverGender = giver.Gender
+			}
+			s.onHugSuggestion(receiverID, &models.PendingHugInboxItem{
+				ID:            hugCopy.ID,
+				GiverID:       hugCopy.GiverID,
+				ReceiverID:    hugCopy.ReceiverID,
+				GiverUsername: giverUsername,
+				GiverGender:   giverGender,
+				CreatedAt:     hugCopy.CreatedAt,
+			})
+		}()
 	}
 
 	return h, nil
@@ -148,13 +139,10 @@ func (s *service) AcceptHug(ctx context.Context, hugID, receiverID uuid.UUID) (*
 			return err
 		}
 
-		// Start shared cooldown
-		cd := int32(defaultCooldownSeconds)
-		cooldown, _ := s.hugRepo.GetCooldown(txCtx, h.GiverID, h.ReceiverID)
-		if cooldown != nil {
-			cd = cooldown.CooldownSeconds
-		}
-		_, err = s.hugRepo.UpsertCooldown(txCtx, h.GiverID, h.ReceiverID, cd)
+		// Start/refresh shared cooldown. UpsertCooldown's ON CONFLICT only updates
+		// last_hug_at and preserves the existing cooldown_seconds, so the default
+		// value is only used for the initial INSERT.
+		_, err = s.hugRepo.UpsertCooldown(txCtx, h.GiverID, h.ReceiverID, int32(defaultCooldownSeconds))
 		if err != nil {
 			return err
 		}
@@ -166,29 +154,36 @@ func (s *service) AcceptHug(ctx context.Context, hugID, receiverID uuid.UUID) (*
 		return nil, err
 	}
 
-	// Fire WebSocket hug_completed broadcast
+	// Invalidate leaderboard cache since a hug was just completed.
+	s.leaderboardCache.InvalidateAll()
+
+	// Fire WebSocket broadcast asynchronously to avoid blocking the HTTP response.
 	if s.onHugCompleted != nil && acceptedHug != nil {
-		giver, _ := s.userRepo.GetByID(ctx, acceptedHug.GiverID)
-		receiver, _ := s.userRepo.GetByID(ctx, acceptedHug.ReceiverID)
-		giverName := ""
-		receiverName := ""
-		var giverGender *string
-		if giver != nil {
-			giverName = giver.Username
-			giverGender = giver.Gender
-		}
-		if receiver != nil {
-			receiverName = receiver.Username
-		}
-		s.onHugCompleted(&models.HugFeedItem{
-			ID:               acceptedHug.ID,
-			GiverID:          acceptedHug.GiverID,
-			ReceiverID:       acceptedHug.ReceiverID,
-			GiverUsername:    giverName,
-			ReceiverUsername: receiverName,
-			GiverGender:      giverGender,
-			CreatedAt:        acceptedHug.CreatedAt,
-		})
+		hugCopy := *acceptedHug
+		go func() {
+			bgCtx := context.WithoutCancel(ctx)
+			giver, _ := s.userRepo.GetByID(bgCtx, hugCopy.GiverID)
+			receiver, _ := s.userRepo.GetByID(bgCtx, hugCopy.ReceiverID)
+			giverName := ""
+			receiverName := ""
+			var giverGender *string
+			if giver != nil {
+				giverName = giver.Username
+				giverGender = giver.Gender
+			}
+			if receiver != nil {
+				receiverName = receiver.Username
+			}
+			s.onHugCompleted(&models.HugFeedItem{
+				ID:               hugCopy.ID,
+				GiverID:          hugCopy.GiverID,
+				ReceiverID:       hugCopy.ReceiverID,
+				GiverUsername:    giverName,
+				ReceiverUsername: receiverName,
+				GiverGender:      giverGender,
+				CreatedAt:        hugCopy.CreatedAt,
+			})
+		}()
 	}
 
 	return acceptedHug, nil
