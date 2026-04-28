@@ -167,4 +167,6 @@ export const adminApi = {
     api.put(`/admin/users/${userId}/gender`, { gender }),
   updatePassword: (userId: string, password: string) =>
     api.put(`/admin/users/${userId}/password`, { password }),
+  updateBalance: (userId: string, amount: number) =>
+    api.put(`/admin/users/${userId}/balance`, { amount }),
 }

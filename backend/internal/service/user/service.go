@@ -23,19 +23,35 @@ type repo interface {
 	AdminUpdatePassword(ctx context.Context, id uuid.UUID, hashedPassword string) error
 }
 
+type balanceRepo interface {
+	AdminSetBalance(ctx context.Context, userID uuid.UUID, amount int32) (*models.Balance, error)
+}
+
 type jwtManager interface {
 	GenerateAccessToken(userID uuid.UUID, role string) (string, int64, error)
 	GenerateRefreshToken(userID uuid.UUID) (string, error)
 }
 
 type service struct {
-	repo       repo
-	jwtManager jwtManager
+	repo        repo
+	balanceRepo balanceRepo
+	jwtManager  jwtManager
 }
 
-func New(repo repo, jwtManager jwtManager) *service {
-	return &service{
+func New(repo repo, jwtManager jwtManager, opts ...func(*service)) *service {
+	s := &service{
 		repo:       repo,
 		jwtManager: jwtManager,
+	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
+}
+
+// WithBalanceRepo sets the balance repository for admin operations.
+func WithBalanceRepo(br balanceRepo) func(*service) {
+	return func(s *service) {
+		s.balanceRepo = br
 	}
 }

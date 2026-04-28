@@ -68,3 +68,17 @@ func (r *repo) EnsureBalance(ctx context.Context, userID uuid.UUID) error {
 	_, _ = q.EnsureBalance(ctx, userID)
 	return nil
 }
+
+func (r *repo) AdminSetBalance(ctx context.Context, userID uuid.UUID, amount int32) (*models.Balance, error) {
+	q := repository.Queries(ctx, r.q)
+
+	b, err := q.AdminSetBalance(ctx, storage.AdminSetBalanceParams{
+		UserID: userID,
+		Amount: amount,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return toModelBalance(b), nil
+}

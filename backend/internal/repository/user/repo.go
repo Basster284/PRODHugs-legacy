@@ -53,5 +53,6 @@ func toAdminUser(u storage.ListUsersAdminRow) *models.AdminUser {
 		Role:     u.Role,
 		Gender:   gender,
 		BannedAt: bannedAt,
+		Balance:  u.Balance,
 	}
 }

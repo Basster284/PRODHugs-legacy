@@ -10,6 +10,7 @@ import {
   UserPen,
   KeyRound,
   Venus,
+  Coins,
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { useAdminStore, type AdminUser } from '@/stores/admin'
@@ -169,6 +170,39 @@ async function savePassword() {
   }
 }
 
+// Balance dialog
+const balanceDialogOpen = ref(false)
+const newBalance = ref(0)
+const savingBalance = ref(false)
+const balanceError = ref('')
+
+function openBalanceDialog(user: AdminUser) {
+  editingUser.value = user
+  newBalance.value = user.balance
+  balanceError.value = ''
+  balanceDialogOpen.value = true
+}
+
+async function saveBalance() {
+  if (!editingUser.value) return
+  if (newBalance.value < 0) {
+    balanceError.value = 'Сумма не может быть отрицательной'
+    return
+  }
+  savingBalance.value = true
+  balanceError.value = ''
+  try {
+    await admin.updateBalance(editingUser.value.id, newBalance.value)
+    toast.success('Баланс изменён')
+    balanceDialogOpen.value = false
+  } catch (e) {
+    const parsed = parseBackendError(e)
+    balanceError.value = parsed.generalError ?? 'Ошибка сохранения'
+  } finally {
+    savingBalance.value = false
+  }
+}
+
 // ── Ban / Unban ──
 async function toggleBan(user: AdminUser) {
   try {
@@ -283,6 +317,10 @@ function formatBanDate(dateStr: string): string {
                 <p class="text-xs text-muted-foreground">
                   {{ user.gender === 'male' ? 'М' : user.gender === 'female' ? 'Ж' : '—' }}
                 </p>
+                <span class="text-xs text-muted-foreground">·</span>
+                <p class="text-xs text-muted-foreground tabular-nums">
+                  <Coins class="inline size-3 mr-0.5" />{{ user.balance }}
+                </p>
                 <p v-if="user.banned_at" class="text-xs text-destructive/70">
                   с {{ formatBanDate(user.banned_at) }}
                 </p>
@@ -319,6 +357,10 @@ function formatBanDate(dateStr: string): string {
               <DropdownMenuItem @click="openPasswordDialog(user)">
                 <KeyRound class="size-4" />
                 Сменить пароль
+              </DropdownMenuItem>
+              <DropdownMenuItem @click="openBalanceDialog(user)">
+                <Coins class="size-4" />
+                Изменить баланс
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -396,6 +438,38 @@ function formatBanDate(dateStr: string): string {
             @click="saveGender"
           >
             {{ savingGender ? 'Сохранение...' : 'Сохранить' }}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Balance dialog -->
+    <Dialog v-model:open="balanceDialogOpen">
+      <DialogContent class="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Изменить баланс</DialogTitle>
+          <DialogDescription> Пользователь: {{ editingUser?.username }} </DialogDescription>
+        </DialogHeader>
+        <div class="space-y-4">
+          <div class="grid gap-1.5">
+            <Label for="admin-balance">Количество монет</Label>
+            <Input
+              id="admin-balance"
+              v-model.number="newBalance"
+              type="number"
+              min="0"
+              placeholder="0"
+              @keydown.enter="saveBalance"
+            />
+          </div>
+          <p v-if="balanceError" class="text-sm text-destructive">{{ balanceError }}</p>
+          <Button
+            variant="yellow"
+            class="w-full rounded-[21px]"
+            :disabled="savingBalance"
+            @click="saveBalance"
+          >
+            {{ savingBalance ? 'Сохранение...' : 'Сохранить' }}
           </Button>
         </div>
       </DialogContent>

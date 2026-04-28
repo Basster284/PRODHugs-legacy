@@ -414,9 +414,11 @@ func (q *Queries) ListAllUsers(ctx context.Context, arg ListAllUsersParams) ([]L
 }
 
 const listUsersAdmin = `-- name: ListUsersAdmin :many
-SELECT id, username, role, gender, banned_at
-FROM users
-ORDER BY username
+SELECT u.id, u.username, u.role, u.gender, u.banned_at,
+       COALESCE(b.amount, 0)::int AS balance
+FROM users u
+LEFT JOIN balances b ON b.user_id = u.id
+ORDER BY u.username
 LIMIT $2::int OFFSET $1::int
 `
 
@@ -431,6 +433,7 @@ type ListUsersAdminRow struct {
 	Role     string
 	Gender   pgtype.Text
 	BannedAt pgtype.Timestamptz
+	Balance  int32
 }
 
 func (q *Queries) ListUsersAdmin(ctx context.Context, arg ListUsersAdminParams) ([]ListUsersAdminRow, error) {
@@ -448,6 +451,7 @@ func (q *Queries) ListUsersAdmin(ctx context.Context, arg ListUsersAdminParams) 
 			&i.Role,
 			&i.Gender,
 			&i.BannedAt,
+			&i.Balance,
 		); err != nil {
 			return nil, err
 		}

@@ -83,7 +83,7 @@ func New(ctx context.Context, cfg *config.Config, l *slog.Logger) (*App, error) 
 	transactor := repository.NewTransactor(a.dbPool)
 
 	// Services
-	userService := userservice.New(userRepo, jwtManager)
+	userService := userservice.New(userRepo, jwtManager, userservice.WithBalanceRepo(balanceRepo))
 	hugService := hugservice.New(hugRepo, balanceRepo, dailyRewardRepo, userRepo, transactor)
 
 	// WebSocket Hub

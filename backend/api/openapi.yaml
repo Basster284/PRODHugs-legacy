@@ -293,6 +293,7 @@ components:
         - id
         - username
         - role
+        - balance
       properties:
         id: { type: string, format: uuid }
         username: { type: string }
@@ -303,6 +304,7 @@ components:
           type: string
           format: date-time
           nullable: true
+        balance: { type: integer }
 
     AdminStats:
       type: object
@@ -1302,3 +1304,49 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+
+  /admin/users/{userId}/balance:
+    put:
+      summary: Set a user's coin balance
+      operationId: adminUpdateBalance
+      security:
+        - BearerAuth: ["admin"]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: integer
+                  minimum: 0
+              additionalProperties: false
+      responses:
+        '200':
+          description: Balance updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - user_id
+                  - amount
+                properties:
+                  user_id: { type: string, format: uuid }
+                  amount: { type: integer }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'

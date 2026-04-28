@@ -16,6 +16,7 @@ type service interface {
 	AdminUpdateUsername(ctx context.Context, id uuid.UUID, username string) (*models.User, error)
 	AdminUpdateGender(ctx context.Context, id uuid.UUID, gender *string) (*models.User, error)
 	AdminUpdatePassword(ctx context.Context, id uuid.UUID, newPassword string) error
+	AdminUpdateBalance(ctx context.Context, id uuid.UUID, amount int32) (*models.Balance, error)
 }
 
 type AdminHandler struct {
@@ -31,6 +32,7 @@ func toV1AdminUser(u *models.User) v1.AdminUser {
 		Id:       u.ID,
 		Username: u.Username,
 		Role:     v1.AdminUserRole(u.Role),
+		Balance:  0, // Not available from User model; frontend updates locally
 	}
 	if u.Gender != nil {
 		g := v1.Gender(*u.Gender)
@@ -47,6 +49,7 @@ func toV1AdminUserFromAdmin(u *models.AdminUser) v1.AdminUser {
 		Id:       u.ID,
 		Username: u.Username,
 		Role:     v1.AdminUserRole(u.Role),
+		Balance:  int(u.Balance),
 	}
 	if u.Gender != nil {
 		g := v1.Gender(*u.Gender)

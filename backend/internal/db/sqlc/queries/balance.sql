@@ -26,3 +26,10 @@ INSERT INTO balances (user_id, amount)
 VALUES ($1, 0)
 ON CONFLICT (user_id) DO NOTHING
 RETURNING user_id, amount, updated_at;
+
+-- name: AdminSetBalance :one
+INSERT INTO balances (user_id, amount, updated_at)
+VALUES ($1, @amount::int, now())
+ON CONFLICT (user_id)
+DO UPDATE SET amount = @amount::int, updated_at = now()
+RETURNING user_id, amount, updated_at;

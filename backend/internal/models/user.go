@@ -29,6 +29,7 @@ type AdminUser struct {
 	Role     string
 	Gender   *string
 	BannedAt *time.Time
+	Balance  int32
 }
 
 type AdminStats struct {

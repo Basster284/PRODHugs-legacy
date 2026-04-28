@@ -31,6 +31,26 @@ func (q *Queries) AddBalance(ctx context.Context, arg AddBalanceParams) (Balance
 	return i, err
 }
 
+const adminSetBalance = `-- name: AdminSetBalance :one
+INSERT INTO balances (user_id, amount, updated_at)
+VALUES ($1, $2::int, now())
+ON CONFLICT (user_id)
+DO UPDATE SET amount = $2::int, updated_at = now()
+RETURNING user_id, amount, updated_at
+`
+
+type AdminSetBalanceParams struct {
+	UserID uuid.UUID
+	Amount int32
+}
+
+func (q *Queries) AdminSetBalance(ctx context.Context, arg AdminSetBalanceParams) (Balance, error) {
+	row := q.db.QueryRow(ctx, adminSetBalance, arg.UserID, arg.Amount)
+	var i Balance
+	err := row.Scan(&i.UserID, &i.Amount, &i.UpdatedAt)
+	return i, err
+}
+
 const createBalance = `-- name: CreateBalance :one
 INSERT INTO balances (user_id, amount)
 VALUES ($1, $2)

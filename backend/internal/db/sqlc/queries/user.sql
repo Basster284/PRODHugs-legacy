@@ -102,9 +102,11 @@ SELECT COUNT(*) FROM users;
 SELECT COUNT(*) FROM users WHERE banned_at IS NOT NULL;
 
 -- name: ListUsersAdmin :many
-SELECT id, username, role, gender, banned_at
-FROM users
-ORDER BY username
+SELECT u.id, u.username, u.role, u.gender, u.banned_at,
+       COALESCE(b.amount, 0)::int AS balance
+FROM users u
+LEFT JOIN balances b ON b.user_id = u.id
+ORDER BY u.username
 LIMIT @lim::int OFFSET @off::int;
 
 -- name: AdminUpdateUsername :one
