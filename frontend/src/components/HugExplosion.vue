@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { Heart } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -23,6 +23,7 @@ interface Particle {
 }
 
 const particles = ref<Particle[]>([])
+let doneTimer: ReturnType<typeof setTimeout> | null = null
 
 const COLORS = ['#ffdd2d', '#fff705', '#efc800', '#ffe566', '#ffd000']
 
@@ -53,9 +54,16 @@ onMounted(() => {
   particles.value = generated
 
   // Clean up after longest possible animation
-  setTimeout(() => {
+  doneTimer = setTimeout(() => {
     emit('done')
   }, 950)
+})
+
+onUnmounted(() => {
+  if (doneTimer) {
+    clearTimeout(doneTimer)
+    doneTimer = null
+  }
 })
 </script>
 

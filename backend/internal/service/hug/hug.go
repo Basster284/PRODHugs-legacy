@@ -196,31 +196,41 @@ func (s *service) AcceptHug(ctx context.Context, hugID, receiverID uuid.UUID) (*
 
 // DeclineHug declines a pending hug suggestion.
 func (s *service) DeclineHug(ctx context.Context, hugID, receiverID uuid.UUID) error {
-	h, err := s.hugRepo.DeclineHug(ctx, hugID, receiverID)
+	var h *models.Hug
+
+	// Wrap decline + cooldown set in a transaction so the cooldown is always applied
+	// when the hug is declined (prevents giver from immediately re-sending).
+	err := s.tx.RunInTx(ctx, func(txCtx context.Context) error {
+		var err error
+		h, err = s.hugRepo.DeclineHug(txCtx, hugID, receiverID)
+		if err != nil {
+			return err
+		}
+		if h == nil {
+			// Check why
+			existing, lookupErr := s.hugRepo.GetHugByID(txCtx, hugID)
+			if lookupErr != nil {
+				return lookupErr
+			}
+			if existing == nil {
+				return errorz.ErrHugNotFound
+			}
+			if existing.Status != models.HugStatusPending {
+				return errorz.ErrHugNotPending
+			}
+			return errorz.ErrHugExpired
+		}
+
+		// Set 5-minute decline cooldown on the pair
+		declineUntil := time.Now().Add(time.Duration(declineCooldownSeconds) * time.Second)
+		return s.hugRepo.SetDeclineCooldown(txCtx, h.GiverID, h.ReceiverID, declineUntil)
+	})
 	if err != nil {
 		return err
 	}
-	if h == nil {
-		// Check why
-		existing, lookupErr := s.hugRepo.GetHugByID(ctx, hugID)
-		if lookupErr != nil {
-			return lookupErr
-		}
-		if existing == nil {
-			return errorz.ErrHugNotFound
-		}
-		if existing.Status != models.HugStatusPending {
-			return errorz.ErrHugNotPending
-		}
-		return errorz.ErrHugExpired
-	}
 
-	// Set 5-minute decline cooldown on the pair
-	declineUntil := time.Now().Add(time.Duration(declineCooldownSeconds) * time.Second)
-	_ = s.hugRepo.SetDeclineCooldown(ctx, h.GiverID, h.ReceiverID, declineUntil)
-
-	// Fire WebSocket hug_declined to giver
-	if s.onHugDeclined != nil {
+	// Fire WebSocket hug_declined to giver (outside tx — fire-and-forget)
+	if s.onHugDeclined != nil && h != nil {
 		s.onHugDeclined(h.GiverID, hugID, h.ReceiverID)
 	}
 
@@ -293,34 +303,45 @@ func (s *service) GetCooldownInfo(ctx context.Context, userA, userB uuid.UUID) (
 
 // UpgradeCooldown allows either user in a pair to pay to reduce the shared cooldown.
 func (s *service) UpgradeCooldown(ctx context.Context, payerID, otherUserID uuid.UUID) (*models.HugCooldown, error) {
-	// Deduct balance
-	b, err := s.balanceRepo.DeductBalance(ctx, payerID, int32(upgradeCost))
-	if err != nil {
-		return nil, err
-	}
-	if b == nil {
-		return nil, errorz.ErrInsufficientBalance
-	}
+	var reduced *models.HugCooldown
 
-	// Ensure cooldown row exists
-	cooldown, err := s.hugRepo.GetCooldown(ctx, payerID, otherUserID)
-	if err != nil {
-		return nil, err
-	}
-	if cooldown == nil {
-		// Create one with default then reduce
-		_, err = s.hugRepo.UpsertCooldown(ctx, payerID, otherUserID, defaultCooldownSeconds)
+	// Wrap deduct + cooldown reduction in a transaction so balance is rolled back
+	// if the cooldown reduction fails.
+	err := s.tx.RunInTx(ctx, func(txCtx context.Context) error {
+		// Deduct balance
+		b, err := s.balanceRepo.DeductBalance(txCtx, payerID, int32(upgradeCost))
 		if err != nil {
-			return nil, err
+			return err
 		}
-	}
+		if b == nil {
+			return errorz.ErrInsufficientBalance
+		}
 
-	reduced, err := s.hugRepo.ReduceCooldown(ctx, payerID, otherUserID, cooldownReductionPerUpgrade)
+		// Ensure cooldown row exists
+		cooldown, err := s.hugRepo.GetCooldown(txCtx, payerID, otherUserID)
+		if err != nil {
+			return err
+		}
+		if cooldown == nil {
+			// Create one with default then reduce
+			_, err = s.hugRepo.UpsertCooldown(txCtx, payerID, otherUserID, defaultCooldownSeconds)
+			if err != nil {
+				return err
+			}
+		}
+
+		reduced, err = s.hugRepo.ReduceCooldown(txCtx, payerID, otherUserID, cooldownReductionPerUpgrade)
+		if err != nil {
+			return err
+		}
+		if reduced == nil {
+			return errorz.ErrCooldownNotFound
+		}
+
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	if reduced == nil {
-		return nil, errorz.ErrCooldownNotFound
 	}
 
 	return reduced, nil

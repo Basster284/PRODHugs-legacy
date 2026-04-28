@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { authApi } from '@/api/client'
+import { authApi, setForceLogoutHandler } from '@/api/client'
 import router from '@/router'
 
 export type Gender = 'male' | 'female'
@@ -81,6 +81,13 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('user')
     router.push('/login')
   }
+
+  // Register handler so the API client's forceLogout() can clear reactive state
+  // (avoids circular import: client.ts cannot import this store).
+  setForceLogoutHandler(() => {
+    token.value = null
+    user.value = null
+  })
 
   return { token, user, loading, error, isAuthenticated, register, login, fetchMe, logout }
 })

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { Search } from 'lucide-vue-next'
 import { useHugsStore } from '@/stores/hugs'
 import { Input } from '@/components/ui/input'
@@ -11,13 +11,22 @@ const query = ref('')
 const users = ref<any[]>([])
 const loading = ref(false)
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
+// Monotonic counter to discard out-of-order search responses.
+let searchGeneration = 0
 
 async function search() {
+  const gen = ++searchGeneration
   loading.value = true
   try {
-    users.value = await hugsStore.searchUsers(query.value, 30, 0)
+    const result = await hugsStore.searchUsers(query.value, 30, 0)
+    // Only apply if this is still the latest search request.
+    if (gen === searchGeneration) {
+      users.value = result
+    }
   } finally {
-    loading.value = false
+    if (gen === searchGeneration) {
+      loading.value = false
+    }
   }
 }
 
@@ -27,6 +36,15 @@ watch(query, () => {
 })
 
 onMounted(search)
+
+onUnmounted(() => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+  }
+  // Increment generation so any in-flight search response is discarded.
+  searchGeneration++
+})
 </script>
 
 <template>

@@ -45,7 +45,7 @@ export const useAdminStore = defineStore('admin', () => {
   }
 
   async function loadMore() {
-    if (loadingMore.value || !hasMore.value) return
+    if (loadingMore.value || loading.value || !hasMore.value) return
     loadingMore.value = true
     try {
       const res = await adminApi.getUsers(PAGE_SIZE, offset.value)

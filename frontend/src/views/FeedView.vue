@@ -91,6 +91,7 @@ function bumpActivityBucket(createdAt: string) {
 
 // WebSocket subscription cleanup
 const cleanups: Array<() => void> = []
+let isUnmounted = false
 
 onMounted(async () => {
   hugsStore
@@ -125,6 +126,8 @@ onMounted(async () => {
 
   // Find the nearest scrollable ancestor for scroll detection
   nextTick(() => {
+    // Guard against the component being unmounted before nextTick resolves.
+    if (isUnmounted) return
     let el: HTMLElement | null = document.querySelector('.feed-scroll-root')
     if (!el) {
       // Fallback: walk up to find the scrollable container
@@ -136,6 +139,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  isUnmounted = true
   cleanups.forEach((fn) => fn())
   if (tick) {
     clearInterval(tick)

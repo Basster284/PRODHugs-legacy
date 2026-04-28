@@ -71,7 +71,16 @@ router.beforeEach((to, _from, next) => {
   } else if (to.meta.guest && token) {
     next('/dashboard')
   } else if (to.meta.admin) {
-    const user = userStr ? JSON.parse(userStr) : null
+    let user: { role?: string } | null = null
+    try {
+      user = userStr ? JSON.parse(userStr) : null
+    } catch {
+      // Corrupt localStorage data — clear it and redirect to login.
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      next('/login')
+      return
+    }
     if (user?.role !== 'admin') {
       next('/dashboard')
     } else {

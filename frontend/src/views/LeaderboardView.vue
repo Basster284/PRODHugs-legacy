@@ -27,7 +27,7 @@ onMounted(() => {
       <p class="text-muted-foreground">Топ пользователей по количеству обнимашек</p>
     </div>
 
-    <div v-if="hugsStore.loading" class="space-y-3">
+    <div v-if="hugsStore.leaderboardLoading" class="space-y-3">
       <Skeleton v-for="i in 10" :key="i" class="h-12 w-full" />
     </div>
 

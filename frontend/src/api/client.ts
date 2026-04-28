@@ -43,9 +43,18 @@ function isAuthRequest(config: InternalAxiosRequestConfig | undefined): boolean 
   return AUTH_PATHS.some((p) => config.url!.endsWith(p))
 }
 
+// Optional callback set by the auth store to clear its reactive state on force-logout.
+let onForceLogout: (() => void) | null = null
+
+export function setForceLogoutHandler(handler: () => void) {
+  onForceLogout = handler
+}
+
 function forceLogout() {
   localStorage.removeItem('token')
   localStorage.removeItem('user')
+  // Clear Pinia auth store state to keep it in sync with localStorage.
+  onForceLogout?.()
   router.push('/login')
 }
 

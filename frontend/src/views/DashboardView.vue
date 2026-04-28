@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { Heart, ArrowUp, ArrowDown, Gift, Coins, Users, Trophy, Newspaper } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { useAuthStore } from '@/stores/auth'
@@ -27,6 +27,7 @@ const history = ref<HugFeedItem[]>([])
 const dailyResult = ref<DailyRewardResponse | null>(null)
 const claimingDaily = ref(false)
 const loading = ref(true)
+let unmounted = false
 
 const rankThresholds = [
   { name: 'Новичок', min: 0 },
@@ -66,9 +67,14 @@ onMounted(async () => {
   await balancePromise
 
   const [p, h] = await Promise.all([profilePromise, historyPromise, inboxPromise, outgoingPromise])
+  if (unmounted) return
   if (p) profile.value = p
   if (h) history.value = h
   loading.value = false
+})
+
+onUnmounted(() => {
+  unmounted = true
 })
 
 function formatDate(dateStr: string): string {

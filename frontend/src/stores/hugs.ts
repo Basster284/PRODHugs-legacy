@@ -84,6 +84,8 @@ export const useHugsStore = defineStore('hugs', () => {
   const feed = ref<HugFeedItem[]>([])
   const leaderboard = ref<LeaderboardEntry[]>([])
   const loading = ref(false)
+  const feedLoading = ref(false)
+  const leaderboardLoading = ref(false)
 
   // Inbox / outgoing state
   const inbox = ref<PendingHugInboxItem[]>([])
@@ -181,22 +183,22 @@ export const useHugsStore = defineStore('hugs', () => {
   }
 
   async function fetchFeed(limit = 50) {
-    loading.value = true
+    feedLoading.value = true
     try {
       const res = await hugsApi.getFeed(limit)
       feed.value = res.data || []
     } finally {
-      loading.value = false
+      feedLoading.value = false
     }
   }
 
   async function fetchLeaderboard(limit = 20, offset = 0) {
-    loading.value = true
+    leaderboardLoading.value = true
     try {
       const res = await leaderboardApi.get(limit, offset)
       leaderboard.value = res.data || []
     } finally {
-      loading.value = false
+      leaderboardLoading.value = false
     }
   }
 
@@ -225,6 +227,8 @@ export const useHugsStore = defineStore('hugs', () => {
     feed,
     leaderboard,
     loading,
+    feedLoading,
+    leaderboardLoading,
     inbox,
     outgoingHug,
     inboxCount,

@@ -115,6 +115,8 @@ export function useWebSocket() {
       socket.value = null
     }
     connected.value = false
+    // Clear all listeners to prevent stale handlers leaking across auth sessions.
+    listeners.clear()
   }
 
   return { connected, connect, disconnect, on }
