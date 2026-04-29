@@ -318,12 +318,12 @@ function formatDate(dateStr: string): string {
     </div>
 
     <!-- Stats cards -->
-    <div v-if="loading" class="grid grid-cols-3 gap-4">
+    <div v-if="loading" class="grid grid-cols-2 gap-4 sm:grid-cols-3">
       <Skeleton class="h-24 rounded-lg" />
       <Skeleton class="h-24 rounded-lg" />
       <Skeleton class="h-24 rounded-lg" />
     </div>
-    <div v-else class="grid grid-cols-3 gap-4">
+    <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3">
       <Card>
         <CardHeader class="pb-2">
           <CardTitle class="text-sm font-medium text-muted-foreground"
@@ -350,7 +350,7 @@ function formatDate(dateStr: string): string {
           </div>
         </CardContent>
       </Card>
-      <Card>
+      <Card class="col-span-2 sm:col-span-1">
         <CardHeader class="pb-2">
           <CardTitle class="text-sm font-medium text-muted-foreground">Сейчас онлайн</CardTitle>
         </CardHeader>
