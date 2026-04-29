@@ -449,6 +449,32 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
+  /auth/check-username:
+    get:
+      summary: Check if a username is available
+      operationId: checkUsername
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 3
+            maxLength: 32
+      responses:
+        '200':
+          description: Username availability result
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - available
+                properties:
+                  available: { type: boolean }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
   /auth/register:
     post:
       summary: Register a new user

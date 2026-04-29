@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { usersApi } from '@/api/client'
-import { validateRegisterForm, parseBackendError, type FieldError } from '@/lib/validation'
+import { authApi, usersApi } from '@/api/client'
+import {
+  validateRegisterForm,
+  validateUsername,
+  parseBackendError,
+  type FieldError,
+} from '@/lib/validation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,6 +31,50 @@ const gender = ref('')
 const serverError = ref('')
 const fieldErrors = ref<FieldError[]>([])
 const submitted = ref(false)
+
+// ── Live username availability check ──
+const usernameAvailable = ref<boolean | null>(null) // null = not checked yet
+const checkingUsername = ref(false)
+let usernameCheckTimer: ReturnType<typeof setTimeout> | null = null
+let usernameCheckGeneration = 0
+
+function scheduleUsernameCheck() {
+  // Reset state immediately
+  usernameAvailable.value = null
+
+  if (usernameCheckTimer) clearTimeout(usernameCheckTimer)
+
+  // Only check if the username passes local validation
+  const localError = validateUsername(username.value)
+  if (localError) return
+
+  usernameCheckTimer = setTimeout(async () => {
+    const gen = ++usernameCheckGeneration
+    checkingUsername.value = true
+    try {
+      const res = await authApi.checkUsername(username.value.trim())
+      if (gen === usernameCheckGeneration) {
+        usernameAvailable.value = res.data.available
+      }
+    } catch {
+      // Network error — don't show anything
+      if (gen === usernameCheckGeneration) {
+        usernameAvailable.value = null
+      }
+    } finally {
+      if (gen === usernameCheckGeneration) {
+        checkingUsername.value = false
+      }
+    }
+  }, 400)
+}
+
+watch(username, scheduleUsernameCheck)
+
+onUnmounted(() => {
+  if (usernameCheckTimer) clearTimeout(usernameCheckTimer)
+  usernameCheckGeneration++
+})
 
 function errorFor(field: string): string | undefined {
   return fieldErrors.value.find((e) => e.field === field)?.message
@@ -79,16 +128,86 @@ async function handleRegister() {
         <form @submit.prevent="handleRegister" class="grid gap-4">
           <div class="grid gap-2">
             <Label for="username">Имя пользователя</Label>
-            <Input
-              id="username"
-              v-model="username"
-              type="text"
-              placeholder="username"
-              :class="{ 'border-destructive': submitted && errorFor('username') }"
-              @input="submitted && validate()"
-            />
+            <div class="relative">
+              <Input
+                id="username"
+                v-model="username"
+                type="text"
+                placeholder="username"
+                maxlength="32"
+                :class="{
+                  'border-destructive': submitted && errorFor('username'),
+                  'border-prod-yellow/50': !submitted && usernameAvailable === true,
+                  'border-destructive/50': !submitted && usernameAvailable === false,
+                  'pr-8': username.length >= 3,
+                }"
+                @input="submitted && validate()"
+              />
+              <div
+                v-if="username.length >= 3 && !errorFor('username')"
+                class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2"
+              >
+                <svg
+                  v-if="checkingUsername"
+                  class="size-4 animate-spin text-muted-foreground"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    class="opacity-25"
+                  />
+                  <path
+                    d="M4 12a8 8 0 018-8"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                <svg
+                  v-else-if="usernameAvailable === true"
+                  class="size-4 text-prod-yellow"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M5 12l5 5L20 7" />
+                </svg>
+                <svg
+                  v-else-if="usernameAvailable === false"
+                  class="size-4 text-destructive"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </div>
+            </div>
             <p v-if="submitted && errorFor('username')" class="text-xs text-destructive">
               {{ errorFor('username') }}
+            </p>
+            <p
+              v-else-if="usernameAvailable === false"
+              class="text-xs text-destructive text-right"
+            >
+              Это имя уже занято
+            </p>
+            <p
+              v-else-if="usernameAvailable === true"
+              class="text-xs text-prod-yellow text-right"
+            >
+              Имя свободно
             </p>
           </div>
           <div class="grid gap-2">

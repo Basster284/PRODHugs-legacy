@@ -27,7 +27,7 @@ const isMe = auth.user?.id === props.user.id
         </AvatarFallback>
       </Avatar>
       <div class="min-w-0">
-        <p class="text-sm font-medium leading-none truncate">
+        <p class="text-sm font-medium truncate">
           {{ user.display_name || user.username }}
         </p>
         <p class="text-xs text-muted-foreground mt-1">

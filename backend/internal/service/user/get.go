@@ -48,3 +48,7 @@ func (s *service) Login(ctx context.Context, username string, password string) (
 func (s *service) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	return s.repo.GetByID(ctx, id)
 }
+
+func (s *service) GetByUsername(ctx context.Context, username string) (*models.User, error) {
+	return s.repo.GetByUsername(ctx, username)
+}

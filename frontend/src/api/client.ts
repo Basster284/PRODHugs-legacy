@@ -116,6 +116,8 @@ export const authApi = {
   login: (username: string, password: string) => api.post('/auth/login', { username, password }),
   logout: () => api.post('/auth/logout'),
   me: () => api.get('/users/me'),
+  checkUsername: (username: string) =>
+    api.get<{ available: boolean }>('/auth/check-username', { params: { username } }),
 }
 
 // Hugs

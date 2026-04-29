@@ -13,6 +13,7 @@ type service interface {
 	Create(ctx context.Context, input *models.CreateUser) (*models.User, string, string, error)
 	Login(ctx context.Context, username string, password string) (*models.User, string, string, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
+	GetByUsername(ctx context.Context, username string) (*models.User, error)
 	UpdateSettings(ctx context.Context, id uuid.UUID, gender *string, displayName *string) (*models.User, error)
 	ChangePassword(ctx context.Context, id uuid.UUID, oldPassword, newPassword string) error
 	SaveRefreshToken(ctx context.Context, jti string, userID uuid.UUID, expiresAtUnix int64) error

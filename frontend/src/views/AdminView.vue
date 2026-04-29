@@ -334,7 +334,7 @@ function formatDate(dateStr: string): string {
             </Avatar>
             <div class="min-w-0">
               <div class="flex items-center gap-2">
-                <p class="text-sm font-medium leading-none truncate">
+                <p class="text-sm font-medium truncate">
                   {{ user.display_name || user.username }}
                 </p>
                 <Badge

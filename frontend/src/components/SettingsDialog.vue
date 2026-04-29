@@ -146,13 +146,13 @@ async function savePassword() {
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="sm:max-w-md">
+    <DialogContent class="sm:max-w-md max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden">
       <DialogHeader>
         <DialogTitle>Настройки</DialogTitle>
         <DialogDescription>Управление профилем и безопасностью</DialogDescription>
       </DialogHeader>
 
-      <div class="space-y-6">
+      <div class="-mx-4 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 pb-1">
         <!-- Profile section -->
         <div class="space-y-3">
           <Label class="text-sm font-medium">Профиль</Label>
