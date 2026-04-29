@@ -120,7 +120,7 @@ const rankInfo = () => getRankProgress(profile.value?.total_hugs ?? 0)
   <div class="mx-auto max-w-4xl space-y-6">
     <div>
       <h1 class="text-2xl font-semibold tracking-tight">
-        Привет, <span class="text-prod-yellow">{{ auth.user?.username }}</span>
+        Привет, <span class="text-prod-yellow">{{ auth.user?.display_name || auth.user?.username }}</span>
       </h1>
       <p class="text-muted-foreground">Твоя панель управления обнимашками</p>
     </div>
@@ -257,14 +257,14 @@ const rankInfo = () => getRankProgress(profile.value?.total_hugs ?? 0)
                   <RouterLink
                     :to="`/user/${hug.receiver_id}`"
                     class="font-medium text-foreground hover:underline"
-                    >{{ hug.receiver_username }}</RouterLink
+                    >{{ hug.receiver_display_name || hug.receiver_username }}</RouterLink
                   >
                 </span>
                 <span v-else class="text-muted-foreground">
                   <RouterLink
                     :to="`/user/${hug.giver_id}`"
                     class="font-medium text-foreground hover:underline"
-                    >{{ hug.giver_username }}</RouterLink
+                    >{{ hug.giver_display_name || hug.giver_username }}</RouterLink
                   >
                   {{ hugVerb(auth.user?.gender) }} тебя
                 </span>

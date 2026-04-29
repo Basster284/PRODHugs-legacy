@@ -9,6 +9,8 @@ export interface HugFeedItem {
   giver_username: string
   receiver_username: string
   giver_gender?: string | null
+  giver_display_name?: string | null
+  receiver_display_name?: string | null
   created_at: string
 }
 
@@ -18,6 +20,7 @@ export interface PendingHugInboxItem {
   receiver_id: string
   giver_username: string
   giver_gender?: string | null
+  giver_display_name?: string | null
   created_at: string
 }
 
@@ -27,6 +30,7 @@ export interface OutgoingPendingHug {
   receiver_id: string
   receiver_username: string
   receiver_gender?: string | null
+  receiver_display_name?: string | null
   created_at: string
 }
 
@@ -39,6 +43,7 @@ export interface SlotInfo {
 export interface LeaderboardEntry {
   user_id: string
   username: string
+  display_name?: string | null
   total_hugs: number
   hugs_given: number
   hugs_received: number
@@ -48,6 +53,7 @@ export interface LeaderboardEntry {
 export interface UserProfile {
   id: string
   username: string
+  display_name?: string | null
   role: string
   gender?: string | null
   hugs_given: number
@@ -64,6 +70,7 @@ export interface UserProfile {
 export interface BlockedUser {
   id: string
   username: string
+  display_name?: string | null
   gender?: string | null
   created_at: string
 }

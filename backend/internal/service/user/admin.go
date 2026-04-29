@@ -55,6 +55,10 @@ func (s *service) AdminUpdatePassword(ctx context.Context, id uuid.UUID, newPass
 	return s.repo.AdminUpdatePassword(ctx, id, hash)
 }
 
+func (s *service) AdminUpdateDisplayName(ctx context.Context, id uuid.UUID, displayName *string) (*models.User, error) {
+	return s.repo.AdminUpdateDisplayName(ctx, id, displayName)
+}
+
 func (s *service) AdminUpdateBalance(ctx context.Context, id uuid.UUID, amount int32) (*models.Balance, error) {
 	return s.balanceRepo.AdminSetBalance(ctx, id, amount)
 }

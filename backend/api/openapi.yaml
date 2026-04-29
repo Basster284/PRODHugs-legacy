@@ -63,6 +63,10 @@ components:
         role: { type: string, enum: [user, admin] }
         gender:
           $ref: '#/components/schemas/Gender'
+        display_name:
+          type: string
+          nullable: true
+          maxLength: 32
 
     AuthResponse:
       type: object
@@ -117,6 +121,12 @@ components:
         receiver_username: { type: string }
         giver_gender:
           $ref: '#/components/schemas/Gender'
+        giver_display_name:
+          type: string
+          nullable: true
+        receiver_display_name:
+          type: string
+          nullable: true
         created_at: { type: string, format: date-time }
 
     CooldownInfo:
@@ -151,6 +161,9 @@ components:
         role: { type: string }
         gender:
           $ref: '#/components/schemas/Gender'
+        display_name:
+          type: string
+          nullable: true
         hugs_given: { type: integer }
         hugs_received: { type: integer }
         total_hugs: { type: integer }
@@ -173,6 +186,9 @@ components:
       properties:
         user_id: { type: string, format: uuid }
         username: { type: string }
+        display_name:
+          type: string
+          nullable: true
         total_hugs: { type: integer }
         hugs_given: { type: integer }
         hugs_received: { type: integer }
@@ -202,6 +218,9 @@ components:
         role: { type: string }
         gender:
           $ref: '#/components/schemas/Gender'
+        display_name:
+          type: string
+          nullable: true
 
     HugActivityItem:
       type: object
@@ -227,6 +246,9 @@ components:
         giver_username: { type: string }
         giver_gender:
           $ref: '#/components/schemas/Gender'
+        giver_display_name:
+          type: string
+          nullable: true
         created_at: { type: string, format: date-time }
 
     OutgoingPendingHug:
@@ -244,6 +266,9 @@ components:
         receiver_username: { type: string }
         receiver_gender:
           $ref: '#/components/schemas/Gender'
+        receiver_display_name:
+          type: string
+          nullable: true
         created_at: { type: string, format: date-time }
 
     HugSlotInfo:
@@ -302,6 +327,9 @@ components:
         role: { type: string, enum: [user, admin] }
         gender:
           $ref: '#/components/schemas/Gender'
+        display_name:
+          type: string
+          nullable: true
         banned_at:
           type: string
           format: date-time
@@ -332,6 +360,9 @@ components:
         username: { type: string }
         gender:
           $ref: '#/components/schemas/Gender'
+        display_name:
+          type: string
+          nullable: true
         created_at: { type: string, format: date-time }
 
   responses:
@@ -595,6 +626,11 @@ paths:
               properties:
                 gender:
                   $ref: '#/components/schemas/Gender'
+                display_name:
+                  type: string
+                  nullable: true
+                  minLength: 1
+                  maxLength: 32
               additionalProperties: false
       responses:
         '200':
@@ -1342,6 +1378,45 @@ paths:
       responses:
         '200':
           description: Gender updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/users/{userId}/display-name:
+    put:
+      summary: Change a user's display name
+      operationId: adminUpdateDisplayName
+      security:
+        - BearerAuth: ["admin"]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_name:
+                  type: string
+                  nullable: true
+                  maxLength: 32
+              additionalProperties: false
+      responses:
+        '200':
+          description: Display name updated
           content:
             application/json:
               schema:

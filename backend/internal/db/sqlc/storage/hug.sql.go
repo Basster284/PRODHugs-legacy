@@ -283,7 +283,8 @@ func (q *Queries) GetHugByID(ctx context.Context, id uuid.UUID) (GetHugByIDRow, 
 
 const getOutgoingPendingHugs = `-- name: GetOutgoingPendingHugs :many
 SELECT h.id, h.giver_id, h.receiver_id, h.status, h.created_at, h.accepted_at,
-       r.username AS receiver_username, r.gender AS receiver_gender
+       r.username AS receiver_username, r.gender AS receiver_gender,
+       r.display_name AS receiver_display_name
 FROM hugs h
 JOIN users r ON r.id = h.receiver_id
 WHERE h.giver_id = $1
@@ -293,14 +294,15 @@ ORDER BY h.created_at DESC
 `
 
 type GetOutgoingPendingHugsRow struct {
-	ID               uuid.UUID
-	GiverID          uuid.UUID
-	ReceiverID       uuid.UUID
-	Status           string
-	CreatedAt        pgtype.Timestamptz
-	AcceptedAt       pgtype.Timestamptz
-	ReceiverUsername string
-	ReceiverGender   pgtype.Text
+	ID                  uuid.UUID
+	GiverID             uuid.UUID
+	ReceiverID          uuid.UUID
+	Status              string
+	CreatedAt           pgtype.Timestamptz
+	AcceptedAt          pgtype.Timestamptz
+	ReceiverUsername    string
+	ReceiverGender      pgtype.Text
+	ReceiverDisplayName pgtype.Text
 }
 
 func (q *Queries) GetOutgoingPendingHugs(ctx context.Context, giverID uuid.UUID) ([]GetOutgoingPendingHugsRow, error) {
@@ -321,6 +323,7 @@ func (q *Queries) GetOutgoingPendingHugs(ctx context.Context, giverID uuid.UUID)
 			&i.AcceptedAt,
 			&i.ReceiverUsername,
 			&i.ReceiverGender,
+			&i.ReceiverDisplayName,
 		); err != nil {
 			return nil, err
 		}
@@ -334,7 +337,8 @@ func (q *Queries) GetOutgoingPendingHugs(ctx context.Context, giverID uuid.UUID)
 
 const getPendingHugsForUser = `-- name: GetPendingHugsForUser :many
 SELECT h.id, h.giver_id, h.receiver_id, h.status, h.created_at, h.accepted_at,
-       g.username AS giver_username, g.gender AS giver_gender
+       g.username AS giver_username, g.gender AS giver_gender,
+       g.display_name AS giver_display_name
 FROM hugs h
 JOIN users g ON g.id = h.giver_id
 WHERE h.receiver_id = $1
@@ -344,14 +348,15 @@ ORDER BY h.created_at DESC
 `
 
 type GetPendingHugsForUserRow struct {
-	ID            uuid.UUID
-	GiverID       uuid.UUID
-	ReceiverID    uuid.UUID
-	Status        string
-	CreatedAt     pgtype.Timestamptz
-	AcceptedAt    pgtype.Timestamptz
-	GiverUsername string
-	GiverGender   pgtype.Text
+	ID               uuid.UUID
+	GiverID          uuid.UUID
+	ReceiverID       uuid.UUID
+	Status           string
+	CreatedAt        pgtype.Timestamptz
+	AcceptedAt       pgtype.Timestamptz
+	GiverUsername    string
+	GiverGender      pgtype.Text
+	GiverDisplayName pgtype.Text
 }
 
 func (q *Queries) GetPendingHugsForUser(ctx context.Context, receiverID uuid.UUID) ([]GetPendingHugsForUserRow, error) {
@@ -372,6 +377,7 @@ func (q *Queries) GetPendingHugsForUser(ctx context.Context, receiverID uuid.UUI
 			&i.AcceptedAt,
 			&i.GiverUsername,
 			&i.GiverGender,
+			&i.GiverDisplayName,
 		); err != nil {
 			return nil, err
 		}
@@ -455,7 +461,9 @@ SELECT
     h.created_at,
     g.username AS giver_username,
     r.username AS receiver_username,
-    g.gender AS giver_gender
+    g.gender AS giver_gender,
+    g.display_name AS giver_display_name,
+    r.display_name AS receiver_display_name
 FROM hugs h
 JOIN users g ON g.id = h.giver_id
 JOIN users r ON r.id = h.receiver_id
@@ -472,13 +480,15 @@ type ListHugsByUserParams struct {
 }
 
 type ListHugsByUserRow struct {
-	ID               uuid.UUID
-	GiverID          uuid.UUID
-	ReceiverID       uuid.UUID
-	CreatedAt        pgtype.Timestamptz
-	GiverUsername    string
-	ReceiverUsername string
-	GiverGender      pgtype.Text
+	ID                  uuid.UUID
+	GiverID             uuid.UUID
+	ReceiverID          uuid.UUID
+	CreatedAt           pgtype.Timestamptz
+	GiverUsername       string
+	ReceiverUsername    string
+	GiverGender         pgtype.Text
+	GiverDisplayName    pgtype.Text
+	ReceiverDisplayName pgtype.Text
 }
 
 func (q *Queries) ListHugsByUser(ctx context.Context, arg ListHugsByUserParams) ([]ListHugsByUserRow, error) {
@@ -498,6 +508,8 @@ func (q *Queries) ListHugsByUser(ctx context.Context, arg ListHugsByUserParams) 
 			&i.GiverUsername,
 			&i.ReceiverUsername,
 			&i.GiverGender,
+			&i.GiverDisplayName,
+			&i.ReceiverDisplayName,
 		); err != nil {
 			return nil, err
 		}

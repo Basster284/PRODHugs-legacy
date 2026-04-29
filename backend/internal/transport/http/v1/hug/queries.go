@@ -53,12 +53,14 @@ func (h *HugHandler) GetHugHistory(ctx context.Context, req v1.GetHugHistoryRequ
 	result := make(v1.GetHugHistory200JSONResponse, len(hugs))
 	for i, hg := range hugs {
 		item := v1.HugFeedItem{
-			Id:               hg.ID,
-			GiverId:          hg.GiverID,
-			ReceiverId:       hg.ReceiverID,
-			GiverUsername:    hg.GiverUsername,
-			ReceiverUsername: hg.ReceiverUsername,
-			CreatedAt:        hg.CreatedAt,
+			Id:                  hg.ID,
+			GiverId:             hg.GiverID,
+			ReceiverId:          hg.ReceiverID,
+			GiverUsername:       hg.GiverUsername,
+			ReceiverUsername:    hg.ReceiverUsername,
+			GiverDisplayName:    hg.GiverDisplayName,
+			ReceiverDisplayName: hg.ReceiverDisplayName,
+			CreatedAt:           hg.CreatedAt,
 		}
 		if hg.GiverGender != nil {
 			g := v1.Gender(*hg.GiverGender)
@@ -84,12 +86,14 @@ func (h *HugHandler) GetHugsFeed(ctx context.Context, req v1.GetHugsFeedRequestO
 	result := make(v1.GetHugsFeed200JSONResponse, len(items))
 	for i, it := range items {
 		fi := v1.HugFeedItem{
-			Id:               it.ID,
-			GiverId:          it.GiverID,
-			ReceiverId:       it.ReceiverID,
-			GiverUsername:    it.GiverUsername,
-			ReceiverUsername: it.ReceiverUsername,
-			CreatedAt:        it.CreatedAt,
+			Id:                  it.ID,
+			GiverId:             it.GiverID,
+			ReceiverId:          it.ReceiverID,
+			GiverUsername:       it.GiverUsername,
+			ReceiverUsername:    it.ReceiverUsername,
+			GiverDisplayName:    it.GiverDisplayName,
+			ReceiverDisplayName: it.ReceiverDisplayName,
+			CreatedAt:           it.CreatedAt,
 		}
 		if it.GiverGender != nil {
 			g := v1.Gender(*it.GiverGender)
@@ -136,8 +140,9 @@ func (h *HugHandler) GetLeaderboard(ctx context.Context, req v1.GetLeaderboardRe
 	result := make(v1.GetLeaderboard200JSONResponse, len(entries))
 	for i, e := range entries {
 		result[i] = v1.LeaderboardEntry{
-			UserId:       e.UserID,
-			Username:     e.Username,
+			UserId:      e.UserID,
+			Username:    e.Username,
+			DisplayName: e.DisplayName,
 			TotalHugs:    int(e.TotalHugs),
 			HugsGiven:    int(e.HugsGiven),
 			HugsReceived: int(e.HugsReceived),
@@ -172,6 +177,7 @@ func (h *HugHandler) GetUserProfile(ctx context.Context, req v1.GetUserProfileRe
 	resp := v1.GetUserProfile200JSONResponse{
 		Id:           user.ID,
 		Username:     user.Username,
+		DisplayName:  user.DisplayName,
 		Role:         user.Role,
 		HugsGiven:    int(stats.HugsGiven),
 		HugsReceived: int(stats.HugsReceived),
@@ -221,9 +227,10 @@ func (h *HugHandler) SearchUsers(ctx context.Context, req v1.SearchUsersRequestO
 	result := make(v1.SearchUsers200JSONResponse, len(users))
 	for i, u := range users {
 		item := v1.UserListItem{
-			Id:       u.ID,
-			Username: u.Username,
-			Role:     u.Role,
+			Id:          u.ID,
+			Username:    u.Username,
+			Role:        u.Role,
+			DisplayName: u.DisplayName,
 		}
 		if u.Gender != nil {
 			g := v1.Gender(*u.Gender)

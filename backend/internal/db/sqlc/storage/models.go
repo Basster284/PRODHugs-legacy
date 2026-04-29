@@ -47,14 +47,15 @@ type RefreshToken struct {
 }
 
 type User struct {
-	ID        uuid.UUID
-	Username  string
-	Password  string
-	Role      string
-	Gender    pgtype.Text
-	BannedAt  pgtype.Timestamptz
-	HugSlots  int32
-	CreatedAt pgtype.Timestamptz
+	ID          uuid.UUID
+	Username    string
+	Password    string
+	Role        string
+	Gender      pgtype.Text
+	BannedAt    pgtype.Timestamptz
+	HugSlots    int32
+	CreatedAt   pgtype.Timestamptz
+	DisplayName pgtype.Text
 }
 
 type UserBlock struct {

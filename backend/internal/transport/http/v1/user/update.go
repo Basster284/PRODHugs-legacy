@@ -3,6 +3,8 @@ package user
 import (
 	"context"
 	"errors"
+	"strings"
+
 	"go-service-template/internal/errorz"
 	"go-service-template/internal/transport/http/middleware"
 	v1 "go-service-template/internal/transport/http/v1"
@@ -19,7 +21,19 @@ func (h *UserHandler) UpdateUserSettings(ctx context.Context, req v1.UpdateUserS
 		gender = &g
 	}
 
-	u, err := h.svc.UpdateSettings(ctx, userID, gender)
+	// display_name: trim whitespace; treat empty string as clearing the name
+	var displayName *string
+	if req.Body.DisplayName != nil {
+		dn := strings.TrimSpace(*req.Body.DisplayName)
+		if dn == "" {
+			// explicit null / empty → clear
+			displayName = nil
+		} else {
+			displayName = &dn
+		}
+	}
+
+	u, err := h.svc.UpdateSettings(ctx, userID, gender, displayName)
 	if err != nil {
 		return nil, err
 	}

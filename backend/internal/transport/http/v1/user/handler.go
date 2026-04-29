@@ -13,7 +13,7 @@ type service interface {
 	Create(ctx context.Context, input *models.CreateUser) (*models.User, string, string, error)
 	Login(ctx context.Context, username string, password string) (*models.User, string, string, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
-	UpdateSettings(ctx context.Context, id uuid.UUID, gender *string) (*models.User, error)
+	UpdateSettings(ctx context.Context, id uuid.UUID, gender *string, displayName *string) (*models.User, error)
 	ChangePassword(ctx context.Context, id uuid.UUID, oldPassword, newPassword string) error
 	SaveRefreshToken(ctx context.Context, jti string, userID uuid.UUID, expiresAtUnix int64) error
 	IsRefreshTokenActive(ctx context.Context, jti string) (bool, error)
@@ -33,9 +33,10 @@ func New(svc service, jwtManager *jwt.Manager, cookieSecure bool) *UserHandler {
 
 func toV1User(u *models.User) v1.User {
 	user := v1.User{
-		Id:       u.ID,
-		Username: u.Username,
-		Role:     v1.UserRole(u.Role),
+		Id:          u.ID,
+		Username:    u.Username,
+		Role:        v1.UserRole(u.Role),
+		DisplayName: u.DisplayName,
 	}
 	if u.Gender != nil {
 		g := v1.Gender(*u.Gender)

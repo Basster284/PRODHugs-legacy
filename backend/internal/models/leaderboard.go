@@ -5,6 +5,7 @@ import "github.com/google/uuid"
 type LeaderboardEntry struct {
 	UserID       uuid.UUID
 	Username     string
+	DisplayName  *string
 	Role         string
 	TotalHugs    int32
 	HugsGiven   int64

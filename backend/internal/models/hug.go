@@ -25,13 +25,15 @@ type Hug struct {
 }
 
 type HugFeedItem struct {
-	ID               uuid.UUID
-	GiverID          uuid.UUID
-	ReceiverID       uuid.UUID
-	GiverUsername    string
-	ReceiverUsername string
-	GiverGender      *string
-	CreatedAt        time.Time
+	ID                   uuid.UUID
+	GiverID              uuid.UUID
+	ReceiverID           uuid.UUID
+	GiverUsername        string
+	ReceiverUsername     string
+	GiverGender          *string
+	GiverDisplayName     *string
+	ReceiverDisplayName  *string
+	CreatedAt            time.Time
 }
 
 type HugActivityItem struct {
@@ -55,21 +57,23 @@ type HugCooldown struct {
 
 // New models for pending hug inbox
 type PendingHugInboxItem struct {
-	ID            uuid.UUID
-	GiverID       uuid.UUID
-	ReceiverID    uuid.UUID
-	GiverUsername string
-	GiverGender   *string
-	CreatedAt     time.Time
+	ID               uuid.UUID
+	GiverID          uuid.UUID
+	ReceiverID       uuid.UUID
+	GiverUsername    string
+	GiverGender      *string
+	GiverDisplayName *string
+	CreatedAt        time.Time
 }
 
 type OutgoingPendingHug struct {
-	ID              uuid.UUID
-	GiverID         uuid.UUID
-	ReceiverID      uuid.UUID
-	ReceiverUsername string
-	ReceiverGender  *string
-	CreatedAt       time.Time
+	ID                  uuid.UUID
+	GiverID             uuid.UUID
+	ReceiverID          uuid.UUID
+	ReceiverUsername    string
+	ReceiverGender      *string
+	ReceiverDisplayName *string
+	CreatedAt           time.Time
 }
 
 type SlotInfo struct {

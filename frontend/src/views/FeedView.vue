@@ -268,11 +268,11 @@ onUnmounted(() => {
           >
             <div class="min-w-0 flex-1 text-sm">
               <RouterLink :to="`/user/${item.giver_id}`" class="font-medium hover:underline">{{
-                item.giver_username
+                item.giver_display_name || item.giver_username
               }}</RouterLink>
               <span class="mx-1 text-muted-foreground">{{ hugVerb(item.giver_gender) }}</span>
               <RouterLink :to="`/user/${item.receiver_id}`" class="font-medium hover:underline">{{
-                item.receiver_username
+                item.receiver_display_name || item.receiver_username
               }}</RouterLink>
             </div>
             <span class="shrink-0 text-xs text-muted-foreground tabular-nums">

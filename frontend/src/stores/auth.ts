@@ -11,6 +11,7 @@ export interface User {
   username: string
   role: string
   gender?: Gender | null
+  display_name?: string | null
 }
 
 export const useAuthStore = defineStore('auth', () => {

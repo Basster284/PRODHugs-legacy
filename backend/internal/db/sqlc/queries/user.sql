@@ -16,7 +16,7 @@ FROM users
 WHERE id = $1;
 
 -- name: SearchUsers :many
-SELECT id, username, role, gender
+SELECT id, username, role, gender, display_name
 FROM users
 WHERE username ILIKE '%' || @query::text || '%'
   AND banned_at IS NULL
@@ -29,7 +29,7 @@ ORDER BY username
 LIMIT @lim::int OFFSET @off::int;
 
 -- name: ListAllUsers :many
-SELECT id, username, role, gender
+SELECT id, username, role, gender, display_name
 FROM users
 WHERE banned_at IS NULL
   AND id NOT IN (
@@ -46,6 +46,7 @@ SELECT
     u.username,
     u.role,
     u.gender,
+    u.display_name,
     COALESCE(given.cnt, 0) + COALESCE(received.cnt, 0) AS total_hugs,
     COALESCE(given.cnt, 0) AS hugs_given,
     COALESCE(received.cnt, 0) AS hugs_received
@@ -77,7 +78,9 @@ SELECT
     h.created_at,
     g.username AS giver_username,
     r.username AS receiver_username,
-    g.gender AS giver_gender
+    g.gender AS giver_gender,
+    g.display_name AS giver_display_name,
+    r.display_name AS receiver_display_name
 FROM hugs h
 JOIN users g ON g.id = h.giver_id
 JOIN users r ON r.id = h.receiver_id
@@ -87,7 +90,7 @@ LIMIT @lim::int;
 
 -- name: UpdateUserSettings :one
 UPDATE users
-SET gender = $2
+SET gender = $2, display_name = $3
 WHERE id = $1
 RETURNING *;
 
@@ -115,7 +118,7 @@ SELECT COUNT(*) FROM users;
 SELECT COUNT(*) FROM users WHERE banned_at IS NOT NULL;
 
 -- name: ListUsersAdmin :many
-SELECT u.id, u.username, u.role, u.gender, u.banned_at, u.created_at,
+SELECT u.id, u.username, u.role, u.gender, u.display_name, u.banned_at, u.created_at,
        COALESCE(b.amount, 0)::int AS balance
 FROM users u
 LEFT JOIN balances b ON b.user_id = u.id
@@ -147,3 +150,9 @@ UPDATE users
 SET hug_slots = hug_slots + 1
 WHERE id = $1 AND hug_slots < 5
 RETURNING hug_slots;
+
+-- name: AdminUpdateDisplayName :one
+UPDATE users
+SET display_name = $2
+WHERE id = $1
+RETURNING *;

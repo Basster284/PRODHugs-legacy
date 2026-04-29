@@ -114,3 +114,22 @@ func (r *repo) AdminUpdatePassword(ctx context.Context, id uuid.UUID, hashedPass
 		Password: hashedPassword,
 	})
 }
+
+func (r *repo) AdminUpdateDisplayName(ctx context.Context, id uuid.UUID, displayName *string) (*models.User, error) {
+	q := repository.Queries(ctx, r.q)
+
+	var dn pgtype.Text
+	if displayName != nil {
+		dn = pgtype.Text{String: *displayName, Valid: true}
+	}
+
+	u, err := q.AdminUpdateDisplayName(ctx, storage.AdminUpdateDisplayNameParams{
+		ID:          id,
+		DisplayName: dn,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return toModelUser(u), nil
+}

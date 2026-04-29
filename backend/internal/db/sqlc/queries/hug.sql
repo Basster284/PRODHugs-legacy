@@ -25,7 +25,8 @@ RETURNING *;
 
 -- name: GetPendingHugsForUser :many
 SELECT h.id, h.giver_id, h.receiver_id, h.status, h.created_at, h.accepted_at,
-       g.username AS giver_username, g.gender AS giver_gender
+       g.username AS giver_username, g.gender AS giver_gender,
+       g.display_name AS giver_display_name
 FROM hugs h
 JOIN users g ON g.id = h.giver_id
 WHERE h.receiver_id = $1
@@ -35,7 +36,8 @@ ORDER BY h.created_at DESC;
 
 -- name: GetOutgoingPendingHugs :many
 SELECT h.id, h.giver_id, h.receiver_id, h.status, h.created_at, h.accepted_at,
-       r.username AS receiver_username, r.gender AS receiver_gender
+       r.username AS receiver_username, r.gender AS receiver_gender,
+       r.display_name AS receiver_display_name
 FROM hugs h
 JOIN users r ON r.id = h.receiver_id
 WHERE h.giver_id = $1
@@ -101,7 +103,9 @@ SELECT
     h.created_at,
     g.username AS giver_username,
     r.username AS receiver_username,
-    g.gender AS giver_gender
+    g.gender AS giver_gender,
+    g.display_name AS giver_display_name,
+    r.display_name AS receiver_display_name
 FROM hugs h
 JOIN users g ON g.id = h.giver_id
 JOIN users r ON r.id = h.receiver_id

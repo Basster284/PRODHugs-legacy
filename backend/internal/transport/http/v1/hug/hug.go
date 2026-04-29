@@ -149,11 +149,12 @@ func (h *HugHandler) GetHugInbox(ctx context.Context, req v1.GetHugInboxRequestO
 	result := make(v1.GetHugInbox200JSONResponse, len(hugs))
 	for i, hg := range hugs {
 		item := v1.PendingHugInboxItem{
-			Id:            hg.ID,
-			GiverId:       hg.GiverID,
-			ReceiverId:    hg.ReceiverID,
-			GiverUsername: hg.GiverUsername,
-			CreatedAt:      hg.CreatedAt,
+			Id:               hg.ID,
+			GiverId:          hg.GiverID,
+			ReceiverId:       hg.ReceiverID,
+			GiverUsername:    hg.GiverUsername,
+			GiverDisplayName: hg.GiverDisplayName,
+			CreatedAt:        hg.CreatedAt,
 		}
 		if hg.GiverGender != nil {
 			g := v1.Gender(*hg.GiverGender)
@@ -187,11 +188,12 @@ func (h *HugHandler) GetOutgoingHugs(ctx context.Context, req v1.GetOutgoingHugs
 	items := make([]v1.OutgoingPendingHug, len(hugs))
 	for i, hug := range hugs {
 		item := v1.OutgoingPendingHug{
-			Id:              hug.ID,
-			GiverId:         hug.GiverID,
-			ReceiverId:      hug.ReceiverID,
-			ReceiverUsername: hug.ReceiverUsername,
-			CreatedAt:       hug.CreatedAt,
+			Id:                  hug.ID,
+			GiverId:             hug.GiverID,
+			ReceiverId:          hug.ReceiverID,
+			ReceiverUsername:    hug.ReceiverUsername,
+			ReceiverDisplayName: hug.ReceiverDisplayName,
+			CreatedAt:           hug.CreatedAt,
 		}
 		if hug.ReceiverGender != nil {
 			g := v1.Gender(*hug.ReceiverGender)

@@ -134,13 +134,18 @@ func (r *repo) GetOutgoingPendingHugs(ctx context.Context, userID uuid.UUID) ([]
 		if row.ReceiverGender.Valid {
 			receiverGender = &row.ReceiverGender.String
 		}
+		var receiverDisplayName *string
+		if row.ReceiverDisplayName.Valid {
+			receiverDisplayName = &row.ReceiverDisplayName.String
+		}
 		result[i] = &models.OutgoingPendingHug{
-			ID:              row.ID,
-			GiverID:         row.GiverID,
-			ReceiverID:      row.ReceiverID,
-			ReceiverUsername: row.ReceiverUsername,
-			ReceiverGender:  receiverGender,
-			CreatedAt:       row.CreatedAt.Time,
+			ID:                  row.ID,
+			GiverID:             row.GiverID,
+			ReceiverID:          row.ReceiverID,
+			ReceiverUsername:    row.ReceiverUsername,
+			ReceiverGender:      receiverGender,
+			ReceiverDisplayName: receiverDisplayName,
+			CreatedAt:           row.CreatedAt.Time,
 		}
 	}
 	return result, nil

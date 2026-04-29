@@ -146,7 +146,8 @@ export const usersApi = {
   search: (q = '', limit = 20, offset = 0) =>
     api.get('/users/search', { params: { q, limit, offset } }),
   getProfile: (userId: string) => api.get(`/users/${userId}/profile`),
-  updateSettings: (data: { gender?: string }) => api.put('/users/me/settings', data),
+  updateSettings: (data: { gender?: string; display_name?: string | null }) =>
+    api.put('/users/me/settings', data),
   changePassword: (oldPassword: string, newPassword: string) =>
     api.put('/users/me/password', { old_password: oldPassword, new_password: newPassword }),
   blockUser: (userId: string) => api.post(`/users/${userId}/block`),
@@ -169,6 +170,8 @@ export const adminApi = {
     api.put(`/admin/users/${userId}/username`, { username }),
   updateGender: (userId: string, gender: string | null) =>
     api.put(`/admin/users/${userId}/gender`, { gender }),
+  updateDisplayName: (userId: string, displayName: string | null) =>
+    api.put(`/admin/users/${userId}/display-name`, { display_name: displayName }),
   updatePassword: (userId: string, password: string) =>
     api.put(`/admin/users/${userId}/password`, { password }),
   updateBalance: (userId: string, amount: number) =>

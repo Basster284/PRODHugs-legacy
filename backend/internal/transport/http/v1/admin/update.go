@@ -39,6 +39,15 @@ func (h *AdminHandler) AdminUpdateGender(ctx context.Context, req v1.AdminUpdate
 	return v1.AdminUpdateGender200JSONResponse(toV1AdminUser(u)), nil
 }
 
+func (h *AdminHandler) AdminUpdateDisplayName(ctx context.Context, req v1.AdminUpdateDisplayNameRequestObject) (v1.AdminUpdateDisplayNameResponseObject, error) {
+	u, err := h.svc.AdminUpdateDisplayName(ctx, req.UserId, req.Body.DisplayName)
+	if err != nil {
+		return nil, err
+	}
+
+	return v1.AdminUpdateDisplayName200JSONResponse(toV1AdminUser(u)), nil
+}
+
 func (h *AdminHandler) AdminUpdatePassword(ctx context.Context, req v1.AdminUpdatePasswordRequestObject) (v1.AdminUpdatePasswordResponseObject, error) {
 	err := h.svc.AdminUpdatePassword(ctx, req.UserId, req.Body.Password)
 	if err != nil {

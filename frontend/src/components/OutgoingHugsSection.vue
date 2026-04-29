@@ -99,7 +99,7 @@ async function buySlot() {
               :to="`/user/${slot.hug.receiver_id}`"
               class="font-medium hover:underline"
             >
-              {{ slot.hug.receiver_username }}
+              {{ slot.hug.receiver_display_name || slot.hug.receiver_username }}
             </RouterLink>
             <span class="ml-1.5 text-[10px] text-muted-foreground">
               {{ relativeTime(slot.hug.created_at) }}

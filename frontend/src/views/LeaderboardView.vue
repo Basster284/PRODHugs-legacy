@@ -67,13 +67,18 @@ onMounted(() => {
               <div class="flex items-center gap-2">
                 <Avatar class="size-6 sm:size-7">
                   <AvatarFallback class="text-[9px] sm:text-[10px]">
-                    {{ entry.username.slice(0, 2).toUpperCase() }}
+                    {{ (entry.display_name || entry.username).slice(0, 2).toUpperCase() }}
                   </AvatarFallback>
                 </Avatar>
                 <div class="min-w-0">
                   <span class="block truncate text-xs font-medium sm:text-sm">{{
-                    entry.username
+                    entry.display_name || entry.username
                   }}</span>
+                  <span
+                    v-if="entry.display_name"
+                    class="block truncate text-[10px] text-muted-foreground"
+                    >@{{ entry.username }}</span
+                  >
                   <RankBadge :rank="entry.rank" class="mt-0.5 sm:hidden" />
                 </div>
               </div>

@@ -57,7 +57,7 @@ async function accept(item: (typeof inbox.value)[number], event: MouseEvent) {
       explosionStyle.value = explosionPos
       showExplosion.value = true
     }
-    toast.success(`Обнимашка с ${item.giver_username} принята!`)
+    toast.success(`Обнимашка с ${item.giver_display_name || item.giver_username} принята!`)
   } catch (e: unknown) {
     const err = e as { response?: { data?: { code?: string; message?: string } } }
     const code = err.response?.data?.code
@@ -119,13 +119,13 @@ function onExplosionDone() {
         >
           <Avatar class="size-9 shrink-0">
             <AvatarFallback class="text-xs">
-              {{ initials(item.giver_username) }}
+              {{ initials(item.giver_display_name || item.giver_username) }}
             </AvatarFallback>
           </Avatar>
           <div class="min-w-0 flex-1">
             <div class="text-sm">
               <RouterLink :to="`/user/${item.giver_id}`" class="font-medium hover:underline">
-                {{ item.giver_username }}
+                {{ item.giver_display_name || item.giver_username }}
               </RouterLink>
               <span class="text-muted-foreground"> предлагает обняться</span>
             </div>

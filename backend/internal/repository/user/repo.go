@@ -32,12 +32,17 @@ func toModelUser(u storage.User) *models.User {
 	if u.CreatedAt.Valid {
 		createdAt = &u.CreatedAt.Time
 	}
+	var displayName *string
+	if u.DisplayName.Valid {
+		displayName = &u.DisplayName.String
+	}
 	return &models.User{
 		ID:             u.ID,
 		Username:       u.Username,
 		Role:           u.Role,
 		HashedPassword: u.Password,
 		Gender:         gender,
+		DisplayName:    displayName,
 		BannedAt:       bannedAt,
 		CreatedAt:      createdAt,
 	}
@@ -56,13 +61,18 @@ func toAdminUser(u storage.ListUsersAdminRow) *models.AdminUser {
 	if u.CreatedAt.Valid {
 		createdAt = &u.CreatedAt.Time
 	}
+	var displayName *string
+	if u.DisplayName.Valid {
+		displayName = &u.DisplayName.String
+	}
 	return &models.AdminUser{
-		ID:        u.ID,
-		Username:  u.Username,
-		Role:      u.Role,
-		Gender:    gender,
-		BannedAt:  bannedAt,
-		CreatedAt: createdAt,
-		Balance:   u.Balance,
+		ID:          u.ID,
+		Username:    u.Username,
+		Role:        u.Role,
+		Gender:      gender,
+		DisplayName: displayName,
+		BannedAt:    bannedAt,
+		CreatedAt:   createdAt,
+		Balance:     u.Balance,
 	}
 }

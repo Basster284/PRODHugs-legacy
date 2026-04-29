@@ -26,9 +26,10 @@ const open = defineModel<boolean>('open', { required: true })
 const auth = useAuthStore()
 const hugsStore = useHugsStore()
 
-// ── Gender ──
+// ── Display name + Gender ──
+const displayName = ref(auth.user?.display_name ?? '')
 const gender = ref<Gender | ''>((auth.user?.gender as Gender) ?? '')
-const savingGender = ref(false)
+const savingProfile = ref(false)
 
 // ── Blocked users ──
 const blockedUsers = ref<BlockedUser[]>([])
@@ -62,25 +63,29 @@ async function unblock(userId: string) {
 
 watch(open, (isOpen) => {
   if (isOpen) {
+    displayName.value = auth.user?.display_name ?? ''
     gender.value = (auth.user?.gender as Gender) ?? ''
     resetPasswordForm()
     fetchBlocked()
   }
 })
 
-async function saveGender() {
-  savingGender.value = true
+async function saveProfile() {
+  savingProfile.value = true
   try {
-    const payload = gender.value ? { gender: gender.value } : {}
+    const trimmed = displayName.value.trim()
+    const payload: { gender?: string; display_name?: string | null } = {}
+    if (gender.value) payload.gender = gender.value
+    payload.display_name = trimmed || null
     const res = await usersApi.updateSettings(payload)
     auth.user = res.data
     localStorage.setItem('user', JSON.stringify(res.data))
-    toast.success('Пол сохранён')
+    toast.success('Настройки сохранены')
   } catch (e) {
     const parsed = parseBackendError(e)
     toast.error(parsed.generalError ?? 'Ошибка сохранения')
   } finally {
-    savingGender.value = false
+    savingProfile.value = false
   }
 }
 
@@ -148,27 +153,44 @@ async function savePassword() {
       </DialogHeader>
 
       <div class="space-y-6">
-        <!-- Gender section -->
+        <!-- Profile section -->
         <div class="space-y-3">
-          <Label class="text-sm font-medium">Пол</Label>
-          <RadioGroup v-model="gender" class="flex gap-4">
-            <div class="flex items-center gap-2">
-              <RadioGroupItem id="gender-male" value="male" />
-              <Label for="gender-male" class="font-normal cursor-pointer">Мужской</Label>
-            </div>
-            <div class="flex items-center gap-2">
-              <RadioGroupItem id="gender-female" value="female" />
-              <Label for="gender-female" class="font-normal cursor-pointer">Женский</Label>
-            </div>
-          </RadioGroup>
+          <Label class="text-sm font-medium">Профиль</Label>
+          <div class="grid gap-1.5">
+            <Label for="settings-display-name" class="text-xs text-muted-foreground"
+              >Отображаемое имя</Label
+            >
+            <Input
+              id="settings-display-name"
+              v-model="displayName"
+              maxlength="32"
+              placeholder="Как тебя называть"
+            />
+            <p class="text-[11px] text-muted-foreground">
+              Оставь пустым, чтобы использовать имя пользователя.
+            </p>
+          </div>
+          <div class="grid gap-1.5">
+            <Label class="text-xs text-muted-foreground">Пол</Label>
+            <RadioGroup v-model="gender" class="flex gap-4">
+              <div class="flex items-center gap-2">
+                <RadioGroupItem id="gender-male" value="male" />
+                <Label for="gender-male" class="font-normal cursor-pointer">Мужской</Label>
+              </div>
+              <div class="flex items-center gap-2">
+                <RadioGroupItem id="gender-female" value="female" />
+                <Label for="gender-female" class="font-normal cursor-pointer">Женский</Label>
+              </div>
+            </RadioGroup>
+          </div>
           <Button
             variant="yellow"
             size="sm"
             class="rounded-[21px]"
-            :disabled="savingGender"
-            @click="saveGender"
+            :disabled="savingProfile"
+            @click="saveProfile"
           >
-            {{ savingGender ? 'Сохранение...' : 'Сохранить пол' }}
+            {{ savingProfile ? 'Сохранение...' : 'Сохранить' }}
           </Button>
         </div>
 
@@ -275,7 +297,7 @@ async function savePassword() {
             >
               <Avatar class="size-7 shrink-0">
                 <AvatarFallback class="text-[10px]">
-                  {{ user.username.slice(0, 2).toUpperCase() }}
+                  {{ (user.display_name || user.username).slice(0, 2).toUpperCase() }}
                 </AvatarFallback>
               </Avatar>
               <RouterLink
@@ -283,7 +305,7 @@ async function savePassword() {
                 class="min-w-0 flex-1 truncate text-sm font-medium hover:underline"
                 @click="open = false"
               >
-                {{ user.username }}
+                {{ user.display_name || user.username }}
               </RouterLink>
               <Button
                 variant="ghost"

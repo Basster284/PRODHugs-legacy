@@ -129,11 +129,16 @@ watch(userId, () => {
           >
             <Avatar class="size-16 sm:size-16">
               <AvatarFallback class="text-lg">
-                {{ profile.username.slice(0, 2).toUpperCase() }}
+                {{ (profile.display_name || profile.username).slice(0, 2).toUpperCase() }}
               </AvatarFallback>
             </Avatar>
             <div class="flex-1 space-y-1.5">
-              <h1 class="text-lg font-semibold sm:text-xl">{{ profile.username }}</h1>
+              <h1 class="text-lg font-semibold sm:text-xl">
+                {{ profile.display_name || profile.username }}
+              </h1>
+              <p v-if="profile.display_name" class="text-xs text-muted-foreground">
+                @{{ profile.username }}
+              </p>
               <div class="flex items-center justify-center gap-2 sm:justify-start">
                 <RankBadge :rank="profile.rank" />
                 <span class="text-xs text-muted-foreground">
@@ -145,7 +150,7 @@ watch(userId, () => {
               <HugButton
                 v-if="!isBlocked"
                 :userId="userId"
-                :username="profile.username"
+                :username="profile.display_name || profile.username"
                 size="lg"
                 @hugged="onHugged"
               />

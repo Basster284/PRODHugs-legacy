@@ -8,6 +8,7 @@ const props = defineProps<{
     id: string
     username: string
     role: string
+    display_name?: string | null
   }
 }>()
 
@@ -22,16 +23,19 @@ const isMe = auth.user?.id === props.user.id
     <RouterLink :to="`/user/${user.id}`" class="flex items-center gap-3 flex-1 min-w-0">
       <Avatar class="size-9">
         <AvatarFallback class="text-xs">
-          {{ user.username.slice(0, 2).toUpperCase() }}
+          {{ (user.display_name || user.username).slice(0, 2).toUpperCase() }}
         </AvatarFallback>
       </Avatar>
       <div class="min-w-0">
-        <p class="text-sm font-medium leading-none truncate">{{ user.username }}</p>
+        <p class="text-sm font-medium leading-none truncate">
+          {{ user.display_name || user.username }}
+        </p>
         <p class="text-xs text-muted-foreground mt-1">
+          <template v-if="user.display_name">@{{ user.username }} · </template>
           {{ user.role === 'admin' ? 'Админ' : 'Пользователь' }}
         </p>
       </div>
     </RouterLink>
-    <HugButton v-if="!isMe" :userId="user.id" :username="user.username" size="sm" />
+    <HugButton v-if="!isMe" :userId="user.id" :username="user.display_name || user.username" size="sm" />
   </div>
 </template>

@@ -11,7 +11,7 @@ type repo interface {
 	Create(ctx context.Context, input *models.CreateUser) (*models.User, error)
 	GetByUsername(ctx context.Context, username string) (*models.User, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
-	UpdateSettings(ctx context.Context, id uuid.UUID, gender *string) (*models.User, error)
+	UpdateSettings(ctx context.Context, id uuid.UUID, gender *string, displayName *string) (*models.User, error)
 	UpdatePassword(ctx context.Context, id uuid.UUID, hashedPassword string) error
 	BanUser(ctx context.Context, id uuid.UUID) (*models.User, error)
 	UnbanUser(ctx context.Context, id uuid.UUID) (*models.User, error)
@@ -21,6 +21,7 @@ type repo interface {
 	AdminUpdateUsername(ctx context.Context, id uuid.UUID, username string) (*models.User, error)
 	AdminUpdateGender(ctx context.Context, id uuid.UUID, gender *string) (*models.User, error)
 	AdminUpdatePassword(ctx context.Context, id uuid.UUID, hashedPassword string) error
+	AdminUpdateDisplayName(ctx context.Context, id uuid.UUID, displayName *string) (*models.User, error)
 }
 
 type balanceRepo interface {

@@ -51,11 +51,16 @@ func (r *repo) GetBlockedUsers(ctx context.Context, userID uuid.UUID) ([]*models
 		if row.Gender.Valid {
 			gender = &row.Gender.String
 		}
+		var displayName *string
+		if row.DisplayName.Valid {
+			displayName = &row.DisplayName.String
+		}
 		result[i] = &models.BlockedUser{
-			ID:        row.ID,
-			Username:  row.Username,
-			Gender:    gender,
-			CreatedAt: row.CreatedAt.Time,
+			ID:          row.ID,
+			Username:    row.Username,
+			Gender:      gender,
+			DisplayName: displayName,
+			CreatedAt:   row.CreatedAt.Time,
 		}
 	}
 	return result, nil

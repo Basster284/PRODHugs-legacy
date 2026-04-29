@@ -54,9 +54,10 @@ func (h *HugHandler) GetBlockedUsers(ctx context.Context, _ v1.GetBlockedUsersRe
 	result := make(v1.GetBlockedUsers200JSONResponse, len(users))
 	for i, u := range users {
 		item := v1.BlockedUser{
-			Id:        u.ID,
-			Username:  u.Username,
-			CreatedAt: u.CreatedAt,
+			Id:          u.ID,
+			Username:    u.Username,
+			DisplayName: u.DisplayName,
+			CreatedAt:   u.CreatedAt,
 		}
 		if u.Gender != nil {
 			g := v1.Gender(*u.Gender)

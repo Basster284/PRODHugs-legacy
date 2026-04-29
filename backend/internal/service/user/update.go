@@ -10,8 +10,8 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *service) UpdateSettings(ctx context.Context, id uuid.UUID, gender *string) (*models.User, error) {
-	return s.repo.UpdateSettings(ctx, id, gender)
+func (s *service) UpdateSettings(ctx context.Context, id uuid.UUID, gender *string, displayName *string) (*models.User, error) {
+	return s.repo.UpdateSettings(ctx, id, gender, displayName)
 }
 
 func (s *service) ChangePassword(ctx context.Context, id uuid.UUID, oldPassword, newPassword string) error {

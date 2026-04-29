@@ -20,18 +20,20 @@ type User struct {
 	Role           string
 	HashedPassword string
 	Gender         *string
+	DisplayName    *string
 	BannedAt       *time.Time
 	CreatedAt      *time.Time
 }
 
 type AdminUser struct {
-	ID        uuid.UUID
-	Username  string
-	Role      string
-	Gender    *string
-	BannedAt  *time.Time
-	CreatedAt *time.Time
-	Balance   int32
+	ID          uuid.UUID
+	Username    string
+	Role        string
+	Gender      *string
+	DisplayName *string
+	BannedAt    *time.Time
+	CreatedAt   *time.Time
+	Balance     int32
 }
 
 type AdminStats struct {
@@ -40,8 +42,9 @@ type AdminStats struct {
 }
 
 type BlockedUser struct {
-	ID        uuid.UUID
-	Username  string
-	Gender    *string
-	CreatedAt time.Time
+	ID          uuid.UUID
+	Username    string
+	Gender      *string
+	DisplayName *string
+	CreatedAt   time.Time
 }

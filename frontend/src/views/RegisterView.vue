@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { usersApi } from '@/api/client'
 import { validateRegisterForm, parseBackendError, type FieldError } from '@/lib/validation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +19,7 @@ import PasswordRequirements from '@/components/PasswordRequirements.vue'
 
 const auth = useAuthStore()
 const username = ref('')
+const displayName = ref('')
 const password = ref('')
 const passwordConfirm = ref('')
 const gender = ref('')
@@ -43,6 +45,16 @@ async function handleRegister() {
 
   try {
     await auth.register(username.value, password.value, gender.value || undefined)
+    // Set display name after successful registration (if provided)
+    const dn = displayName.value.trim()
+    if (dn) {
+      try {
+        await usersApi.updateSettings({ display_name: dn })
+        await auth.fetchMe()
+      } catch {
+        // Non-critical — user can set it later in settings
+      }
+    }
   } catch (e: any) {
     const parsed = parseBackendError(e)
     if (parsed.fieldErrors.length > 0) {
@@ -78,6 +90,19 @@ async function handleRegister() {
             <p v-if="submitted && errorFor('username')" class="text-xs text-destructive">
               {{ errorFor('username') }}
             </p>
+          </div>
+          <div class="grid gap-2">
+            <Label for="display-name"
+              >Отображаемое имя
+              <span class="text-muted-foreground text-xs">(необязательно)</span></Label
+            >
+            <Input
+              id="display-name"
+              v-model="displayName"
+              type="text"
+              maxlength="32"
+              placeholder="Как тебя называть"
+            />
           </div>
           <div class="grid gap-2">
             <Label for="password">Пароль</Label>

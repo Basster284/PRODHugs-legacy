@@ -11,6 +11,7 @@ import {
   KeyRound,
   Venus,
   Coins,
+  Tag,
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { useAdminStore, type AdminUser } from '@/stores/admin'
@@ -205,6 +206,36 @@ async function saveBalance() {
   }
 }
 
+// Display name dialog
+const displayNameDialogOpen = ref(false)
+const newDisplayName = ref('')
+const savingDisplayName = ref(false)
+const displayNameError = ref('')
+
+function openDisplayNameDialog(user: AdminUser) {
+  editingUser.value = user
+  newDisplayName.value = user.display_name ?? ''
+  displayNameError.value = ''
+  displayNameDialogOpen.value = true
+}
+
+async function saveDisplayName() {
+  if (!editingUser.value) return
+  savingDisplayName.value = true
+  displayNameError.value = ''
+  try {
+    const value = newDisplayName.value.trim() || null
+    await admin.updateDisplayName(editingUser.value.id, value)
+    toast.success('Отображаемое имя изменено')
+    displayNameDialogOpen.value = false
+  } catch (e) {
+    const parsed = parseBackendError(e)
+    displayNameError.value = parsed.generalError ?? 'Ошибка сохранения'
+  } finally {
+    savingDisplayName.value = false
+  }
+}
+
 // ── Ban / Unban ──
 async function toggleBan(user: AdminUser) {
   try {
@@ -298,12 +329,14 @@ function formatDate(dateStr: string): string {
           <div class="flex items-center gap-3 min-w-0 flex-1">
             <Avatar class="size-9 shrink-0">
               <AvatarFallback class="text-xs">
-                {{ user.username.slice(0, 2).toUpperCase() }}
+                {{ (user.display_name || user.username).slice(0, 2).toUpperCase() }}
               </AvatarFallback>
             </Avatar>
             <div class="min-w-0">
               <div class="flex items-center gap-2">
-                <p class="text-sm font-medium leading-none truncate">{{ user.username }}</p>
+                <p class="text-sm font-medium leading-none truncate">
+                  {{ user.display_name || user.username }}
+                </p>
                 <Badge
                   v-if="user.role === 'admin'"
                   variant="outline"
@@ -316,6 +349,10 @@ function formatDate(dateStr: string): string {
                 </Badge>
               </div>
               <div class="flex items-center gap-2 mt-1">
+                <p v-if="user.display_name" class="text-xs text-muted-foreground">
+                  @{{ user.username }}
+                </p>
+                <span v-if="user.display_name" class="text-xs text-muted-foreground">·</span>
                 <p class="text-xs text-muted-foreground">
                   {{ user.gender === 'male' ? 'М' : user.gender === 'female' ? 'Ж' : '—' }}
                 </p>
@@ -353,6 +390,10 @@ function formatDate(dateStr: string): string {
               <DropdownMenuSeparator />
               <DropdownMenuItem @click="openUsernameDialog(user)">
                 <UserPen class="size-4" />
+                Изменить логин
+              </DropdownMenuItem>
+              <DropdownMenuItem @click="openDisplayNameDialog(user)">
+                <Tag class="size-4" />
                 Изменить имя
               </DropdownMenuItem>
               <DropdownMenuItem @click="openGenderDialog(user)">
@@ -475,6 +516,37 @@ function formatDate(dateStr: string): string {
             @click="saveBalance"
           >
             {{ savingBalance ? 'Сохранение...' : 'Сохранить' }}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Display name dialog -->
+    <Dialog v-model:open="displayNameDialogOpen">
+      <DialogContent class="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Изменить отображаемое имя</DialogTitle>
+          <DialogDescription> Пользователь: {{ editingUser?.username }} </DialogDescription>
+        </DialogHeader>
+        <div class="space-y-4">
+          <div class="grid gap-1.5">
+            <Label for="admin-display-name">Отображаемое имя</Label>
+            <Input
+              id="admin-display-name"
+              v-model="newDisplayName"
+              maxlength="32"
+              placeholder="Оставьте пустым для сброса"
+              @keydown.enter="saveDisplayName"
+            />
+          </div>
+          <p v-if="displayNameError" class="text-sm text-destructive">{{ displayNameError }}</p>
+          <Button
+            variant="yellow"
+            class="w-full rounded-[21px]"
+            :disabled="savingDisplayName"
+            @click="saveDisplayName"
+          >
+            {{ savingDisplayName ? 'Сохранение...' : 'Сохранить' }}
           </Button>
         </div>
       </DialogContent>

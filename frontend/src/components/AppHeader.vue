@@ -49,13 +49,13 @@ onMounted(() => {
           <Button variant="ghost" size="icon" class="rounded-full">
             <Avatar class="size-8">
               <AvatarFallback class="text-xs">
-                {{ auth.user?.username?.slice(0, 2)?.toUpperCase() }}
+                {{ (auth.user?.display_name || auth.user?.username)?.slice(0, 2)?.toUpperCase() }}
               </AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" class="w-48">
-          <DropdownMenuLabel>{{ auth.user?.username }}</DropdownMenuLabel>
+          <DropdownMenuLabel>{{ auth.user?.display_name || auth.user?.username }}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem @click="settingsOpen = true">
             <Settings class="size-4" />
