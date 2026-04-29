@@ -345,6 +345,10 @@ components:
           type: string
           format: date-time
           nullable: true
+        last_visit_at:
+          type: string
+          format: date-time
+          nullable: true
         balance: { type: integer }
 
     AdminStats:

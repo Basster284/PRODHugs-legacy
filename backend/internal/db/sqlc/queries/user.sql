@@ -142,9 +142,15 @@ SELECT COUNT(*) FROM users WHERE banned_at IS NOT NULL;
 
 -- name: ListUsersAdmin :many
 SELECT u.id, u.username, u.role, u.gender, u.display_name, u.banned_at, u.created_at,
-       COALESCE(b.amount, 0)::int AS balance
+       COALESCE(b.amount, 0)::int AS balance,
+       COALESCE(rt.last_visit, u.created_at)::timestamptz AS last_visit_at
 FROM users u
 LEFT JOIN balances b ON b.user_id = u.id
+LEFT JOIN LATERAL (
+    SELECT MAX(created_at) AS last_visit
+    FROM refresh_tokens
+    WHERE user_id = u.id
+) rt ON true
 ORDER BY u.username
 LIMIT @lim::int OFFSET @off::int;
 

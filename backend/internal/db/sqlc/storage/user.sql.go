@@ -571,9 +571,15 @@ func (q *Queries) ListAllUsers(ctx context.Context, arg ListAllUsersParams) ([]L
 
 const listUsersAdmin = `-- name: ListUsersAdmin :many
 SELECT u.id, u.username, u.role, u.gender, u.display_name, u.banned_at, u.created_at,
-       COALESCE(b.amount, 0)::int AS balance
+       COALESCE(b.amount, 0)::int AS balance,
+       COALESCE(rt.last_visit, u.created_at)::timestamptz AS last_visit_at
 FROM users u
 LEFT JOIN balances b ON b.user_id = u.id
+LEFT JOIN LATERAL (
+    SELECT MAX(created_at) AS last_visit
+    FROM refresh_tokens
+    WHERE user_id = u.id
+) rt ON true
 ORDER BY u.username
 LIMIT $2::int OFFSET $1::int
 `
@@ -592,6 +598,7 @@ type ListUsersAdminRow struct {
 	BannedAt    pgtype.Timestamptz
 	CreatedAt   pgtype.Timestamptz
 	Balance     int32
+	LastVisitAt pgtype.Timestamptz
 }
 
 func (q *Queries) ListUsersAdmin(ctx context.Context, arg ListUsersAdminParams) ([]ListUsersAdminRow, error) {
@@ -612,6 +619,7 @@ func (q *Queries) ListUsersAdmin(ctx context.Context, arg ListUsersAdminParams) 
 			&i.BannedAt,
 			&i.CreatedAt,
 			&i.Balance,
+			&i.LastVisitAt,
 		); err != nil {
 			return nil, err
 		}

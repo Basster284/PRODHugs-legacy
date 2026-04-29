@@ -35,6 +35,7 @@ type AdminUser struct {
 	BannedAt    *time.Time
 	CreatedAt   *time.Time
 	Balance     int32
+	LastVisitAt *time.Time // proxy for last user visit via refresh token
 }
 
 type AdminStats struct {

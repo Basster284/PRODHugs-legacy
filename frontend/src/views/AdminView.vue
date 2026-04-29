@@ -426,6 +426,9 @@ function formatDate(dateStr: string): string {
                 <p v-if="user.created_at" class="text-xs text-muted-foreground">
                   рег. {{ formatDate(user.created_at) }}
                 </p>
+                <p v-if="user.last_visit_at" class="text-xs text-muted-foreground">
+                  визит {{ formatDate(user.last_visit_at) }}
+                </p>
               </div>
             </div>
           </div>

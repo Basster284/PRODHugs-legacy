@@ -70,6 +70,10 @@ func toAdminUser(u storage.ListUsersAdminRow) *models.AdminUser {
 	if u.DisplayName.Valid {
 		displayName = &u.DisplayName.String
 	}
+	var lastVisitAt *time.Time
+	if u.LastVisitAt.Valid {
+		lastVisitAt = &u.LastVisitAt.Time
+	}
 	return &models.AdminUser{
 		ID:          u.ID,
 		Username:    u.Username,
@@ -79,5 +83,6 @@ func toAdminUser(u storage.ListUsersAdminRow) *models.AdminUser {
 		BannedAt:    bannedAt,
 		CreatedAt:   createdAt,
 		Balance:     u.Balance,
+		LastVisitAt: lastVisitAt,
 	}
 }

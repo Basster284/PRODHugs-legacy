@@ -11,6 +11,7 @@ export interface AdminUser {
   display_name?: string | null
   banned_at?: string | null
   created_at?: string | null
+  last_visit_at?: string | null
   balance: number
 }
 

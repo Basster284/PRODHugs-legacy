@@ -55,6 +55,7 @@ func toV1AdminUserFromAdmin(u *models.AdminUser) v1.AdminUser {
 		Balance:     int(u.Balance),
 		CreatedAt:   u.CreatedAt,
 		DisplayName: u.DisplayName,
+		LastVisitAt: u.LastVisitAt,
 	}
 	if u.Gender != nil {
 		g := v1.Gender(*u.Gender)
