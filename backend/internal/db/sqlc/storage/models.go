@@ -38,6 +38,14 @@ type HugCooldown struct {
 	DeclineCooldownUntil pgtype.Timestamptz
 }
 
+type RefreshToken struct {
+	Jti       string
+	UserID    uuid.UUID
+	ExpiresAt pgtype.Timestamptz
+	RevokedAt pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
+}
+
 type User struct {
 	ID       uuid.UUID
 	Username string

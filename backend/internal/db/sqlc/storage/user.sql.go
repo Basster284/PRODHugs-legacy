@@ -177,6 +177,7 @@ LEFT JOIN (
 LEFT JOIN (
     SELECT receiver_id, COUNT(*) AS cnt FROM hugs WHERE status = 'completed' GROUP BY receiver_id
 ) received ON received.receiver_id = u.id
+WHERE u.banned_at IS NULL
 ORDER BY total_hugs DESC
 LIMIT $2::int OFFSET $1::int
 `
