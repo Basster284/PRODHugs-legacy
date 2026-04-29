@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { authApi, setForceLogoutHandler } from '@/api/client'
-import { clearAccessToken, getAccessToken, setAccessToken } from '@/lib/token'
+import { accessToken, clearAccessToken, setAccessToken } from '@/lib/token'
 import router from '@/router'
 
 export type Gender = 'male' | 'female'
@@ -14,7 +14,7 @@ export interface User {
 }
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(getAccessToken())
+  const token = accessToken // shared ref from token.ts — stays in sync after refresh
   const user = ref<User | null>(
     localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null,
   )

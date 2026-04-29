@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterView, useRoute } from 'vue-router'
-import { computed, watch, onMounted, onUnmounted } from 'vue'
+import { ensureAccessToken } from '@/lib/token'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { useAuthStore } from '@/stores/auth'
 import { useHugsStore, type HugFeedItem, type PendingHugInboxItem } from '@/stores/hugs'
@@ -16,6 +17,8 @@ const hugsStore = useHugsStore()
 const route = useRoute()
 const ws = useWebSocket()
 
+const authReady = ref(false)
+
 const showLayout = computed(() => {
   return auth.isAuthenticated && !['login', 'register'].includes(route.name as string)
 })
@@ -23,13 +26,18 @@ const showLayout = computed(() => {
 const wsCleanups: Array<() => void> = []
 
 // Connect WebSocket and fetch inbox count when authenticated
-function initAuthState() {
+async function initAuthState() {
+  if (!auth.isAuthenticated) {
+    // Attempt silent token refresh (e.g. after page reload with a valid refresh cookie)
+    await ensureAccessToken()
+  }
   if (auth.isAuthenticated) {
     ws.connect()
     hugsStore.fetchInboxCount()
     hugsStore.fetchOutgoing()
     setupGlobalWsListeners()
   }
+  authReady.value = true
 }
 
 function clearGlobalWsListeners() {
@@ -141,7 +149,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <template v-if="showLayout">
+  <template v-if="!authReady">
+    <!-- Prevent layout flash while initial auth check is in progress -->
+  </template>
+  <template v-else-if="showLayout">
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
