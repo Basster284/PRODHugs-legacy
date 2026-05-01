@@ -7,3 +7,6 @@ tmp/
 .direnv/
 
 node_modules/
+/frontend/PRODHugs-frontend/.vs
+/frontend/PRODHugs-frontend/bin/Debug/net8.0-windows
+/frontend/PRODHugs-frontend/obj
