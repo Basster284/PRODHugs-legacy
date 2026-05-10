@@ -31,7 +31,6 @@ namespace PRODHugs_frontend
         private void InitializeComponent()
         {
             ComponentResourceManager resources = new ComponentResourceManager(typeof(LoginForm));
-            languageButton = new Button();
             label1 = new Label();
             panel1 = new Panel();
             passwordInput = new TextBox();
@@ -41,17 +40,6 @@ namespace PRODHugs_frontend
             label2 = new Label();
             panel1.SuspendLayout();
             SuspendLayout();
-            // 
-            // languageButton
-            // 
-            resources.ApplyResources(languageButton, "languageButton");
-            languageButton.BackColor = Color.FromArgb(0, 64, 46);
-            languageButton.Cursor = Cursors.Hand;
-            languageButton.FlatAppearance.BorderSize = 0;
-            languageButton.ForeColor = Color.White;
-            languageButton.Name = "languageButton";
-            languageButton.UseVisualStyleBackColor = false;
-            languageButton.Click += changeLanguage;
             // 
             // label1
             // 
@@ -115,18 +103,15 @@ namespace PRODHugs_frontend
             BackColor = Color.FromArgb(0, 64, 46);
             Controls.Add(panel1);
             Controls.Add(label1);
-            Controls.Add(languageButton);
             MaximizeBox = false;
             Name = "LoginForm";
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
 
-        private Button languageButton;
         private Label label1;
         private Panel panel1;
         private Label label2;

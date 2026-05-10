@@ -117,26 +117,4 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="label1.Text" xml:space="preserve">
-    <value>Вход</value>
-  </data>
-  <data name="loginButton.Text" xml:space="preserve">
-    <value>Войти</value>
-  </data>
-  <data name="label3.Text" xml:space="preserve">
-    <value>Пароль</value>
-  </data>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>18, 21</value>
-  </data>
-  <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>175, 31</value>
-  </data>
-  <data name="label2.Text" xml:space="preserve">
-    <value>Имя пользователя</value>
-  </data>
-  <data name="$this.Text" xml:space="preserve">
-    <value>Вход</value>
-  </data>
 </root>

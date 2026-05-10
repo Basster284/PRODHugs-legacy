@@ -52,6 +52,7 @@
             Name = "LoadingForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "LoadingForm";
+            Load += LoadingForm_Load;
             ResumeLayout(false);
         }
 
