@@ -66,11 +66,6 @@ namespace PRODHugs_frontend
                     TelegramId = userJ["telegram_id"]?.GetValue<int>() ?? 0,
                     Id = userJ["id"]?.GetValue<string>()
                 };
-                // coins
-                var coinsResponse = await _client.SendAsync(await CreateHeadersGet(token, "https://xn--80ahmbjkfgik8g.xn--p1ai/api/v1/balance"));
-                if (!coinsResponse.IsSuccessStatusCode) return null;
-                string coinsResponseJ = await coinsResponse.Content.ReadAsStringAsync();
-                user.Coins = JsonNode.Parse(coinsResponseJ)!["amount"]!.GetValue<int>();
                 // hugs history
                 var hugsHistoryResponse = await _client.SendAsync(await CreateHeadersGet(token, "https://xn--80ahmbjkfgik8g.xn--p1ai/api/v1/hugs/history"));
                 if (!hugsHistoryResponse.IsSuccessStatusCode) return null;
@@ -98,6 +93,7 @@ namespace PRODHugs_frontend
                 user.AcceptedHugs = totalHugsJ?["hugs_received"]?.GetValue<int?>() ?? 0;
                 user.InitiatedHugs = totalHugsJ?["hugs_given"]?.GetValue<int?>() ?? 0;
                 user.Rank = totalHugsJ?["rank"]?.GetValue<string>();
+                user.Coins = totalHugsJ?["balance"]?.GetValue<int?>() ?? 0;
                 return user;
             }
             catch (Exception ex)
