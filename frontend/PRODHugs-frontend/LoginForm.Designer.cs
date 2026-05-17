@@ -34,7 +34,7 @@ namespace PRODHugs_frontend
             label1 = new Label();
             panel1 = new Panel();
             passwordInput = new TextBox();
-            loginButton = new Button();
+            LoginButton = new Button();
             label3 = new Label();
             usernameInput = new TextBox();
             label2 = new Label();
@@ -52,7 +52,7 @@ namespace PRODHugs_frontend
             resources.ApplyResources(panel1, "panel1");
             panel1.BackColor = Color.FromArgb(0, 51, 36);
             panel1.Controls.Add(passwordInput);
-            panel1.Controls.Add(loginButton);
+            panel1.Controls.Add(LoginButton);
             panel1.Controls.Add(label3);
             panel1.Controls.Add(usernameInput);
             panel1.Controls.Add(label2);
@@ -67,14 +67,14 @@ namespace PRODHugs_frontend
             passwordInput.Name = "passwordInput";
             passwordInput.UseSystemPasswordChar = true;
             // 
-            // loginButton
+            // LoginButton
             // 
-            resources.ApplyResources(loginButton, "loginButton");
-            loginButton.BackColor = Color.FromArgb(255, 221, 45);
-            loginButton.Cursor = Cursors.Hand;
-            loginButton.Name = "loginButton";
-            loginButton.UseVisualStyleBackColor = false;
-            loginButton.Click += loginButton_Click;
+            resources.ApplyResources(LoginButton, "LoginButton");
+            LoginButton.BackColor = Color.FromArgb(255, 221, 45);
+            LoginButton.Cursor = Cursors.Hand;
+            LoginButton.Name = "LoginButton";
+            LoginButton.UseVisualStyleBackColor = false;
+            LoginButton.Click += LoginButton_Click;
             // 
             // label3
             // 
@@ -117,7 +117,7 @@ namespace PRODHugs_frontend
         private Label label2;
         private TextBox usernameInput;
         private Label label3;
-        private Button loginButton;
+        private Button LoginButton;
         private TextBox passwordInput;
     }
 }

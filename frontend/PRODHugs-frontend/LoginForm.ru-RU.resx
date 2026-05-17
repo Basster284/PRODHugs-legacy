@@ -120,18 +120,28 @@
   <data name="label1.Text" xml:space="preserve">
     <value>Вход</value>
   </data>
-  <data name="loginButton.Text" xml:space="preserve">
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="LoginButton.FlatStyle" type="System.Windows.Forms.FlatStyle, System.Windows.Forms">
+    <value>Flat</value>
+  </data>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="LoginButton.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Segoe UI, 14pt</value>
+  </data>
+  <data name="LoginButton.Size" type="System.Drawing.Size, System.Drawing">
+    <value>160, 61</value>
+  </data>
+  <data name="LoginButton.Text" xml:space="preserve">
     <value>Войти</value>
   </data>
   <data name="label3.Text" xml:space="preserve">
     <value>Пароль</value>
   </data>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="label2.Location" type="System.Drawing.Point, System.Drawing">
-    <value>18, 21</value>
+    <value>18, 15</value>
   </data>
   <data name="label2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>175, 31</value>
+    <value>179, 37</value>
   </data>
   <data name="label2.Text" xml:space="preserve">
     <value>Имя пользователя</value>

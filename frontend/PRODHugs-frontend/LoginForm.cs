@@ -7,7 +7,7 @@ namespace PRODHugs_frontend
             InitializeComponent();
         }
 
-        async void loginButton_Click(object sender, EventArgs e)
+        async void LoginButton_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(usernameInput.Text) ||
                 string.IsNullOrEmpty(passwordInput.Text))
@@ -15,7 +15,7 @@ namespace PRODHugs_frontend
                 MessageBox.Show("Логин или пароль пусты.", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            LoadingForm loading = new LoadingForm(this, usernameInput.Text, passwordInput.Text);
+            LoadingForm loading = new(this, usernameInput.Text, passwordInput.Text);
             loading.Show();
         }
     }
