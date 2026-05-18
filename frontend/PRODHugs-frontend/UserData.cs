@@ -9,8 +9,8 @@ namespace PRODHugs_frontend
         public string? Username { get; set; }
         public string? DisplayName { get; set; }
         public int Coins { get; set; }
-        public BindingList<HugElement>? HugsHistory { get; set; } = [];
-        public BindingList<HugElement>? HugsInbox { get; set; } = [];
+        public BindingList<HugElement>? HugsHistory { get; set; } = new();
+        public BindingList<HugElement>? HugsInbox { get; set; } = new();
         public int TotalHugs { get; set; }
         public int InitiatedHugs { get; set; }
         public int AcceptedHugs { get; set; }

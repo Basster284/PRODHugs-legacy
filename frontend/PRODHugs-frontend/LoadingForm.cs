@@ -26,7 +26,7 @@ namespace PRODHugs_frontend
             InitializeComponent();
         }
 
-        private async Task<HttpRequestMessage> CreateHeadersGet(string token, string uri)
+        private static HttpRequestMessage CreateHeadersGet(string token, string uri)
         {
             HttpRequestMessage message = new(HttpMethod.Get, new Uri(uri));
             message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -55,6 +55,8 @@ namespace PRODHugs_frontend
                     Properties.Settings.Default.Save();
                 }
                 string? token = JsonNode.Parse(responseJ)?["token"]?.GetValue<string>();
+                Properties.Settings.Default["token_itself"] = token;
+                Properties.Settings.Default.Save();
                 JsonNode? userJ = JsonNode.Parse(responseJ)?["user"];
                 // the most of user
                 UserData user = new()
@@ -67,7 +69,7 @@ namespace PRODHugs_frontend
                     Id = userJ["id"]?.GetValue<string>()
                 };
                 // hugs history
-                var hugsHistoryResponse = await _client.SendAsync(await CreateHeadersGet(token, "https://xn--80ahmbjkfgik8g.xn--p1ai/api/v1/hugs/history"));
+                var hugsHistoryResponse = await _client.SendAsync(CreateHeadersGet(token, "https://xn--80ahmbjkfgik8g.xn--p1ai/api/v1/hugs/history"));
                 if (!hugsHistoryResponse.IsSuccessStatusCode) return null;
                 string hugsResponseJ = await hugsHistoryResponse.Content.ReadAsStringAsync();
                 foreach (var hug in JsonNode.Parse(hugsResponseJ)!.AsArray())
@@ -76,7 +78,7 @@ namespace PRODHugs_frontend
                         hug["receiver_display_name"]?.GetValue<string>() ?? hug["receiver_username"]?.GetValue<string>()));
                 }
                 // hugs inbox
-                var hugsInboxResponse = await _client.SendAsync(await CreateHeadersGet(token, "https://xn--80ahmbjkfgik8g.xn--p1ai/api/v1/hugs/inbox"));
+                var hugsInboxResponse = await _client.SendAsync(CreateHeadersGet(token, "https://xn--80ahmbjkfgik8g.xn--p1ai/api/v1/hugs/inbox"));
                 if (!hugsInboxResponse.IsSuccessStatusCode) return null;
                 string hugsInboxResponseJ = await hugsInboxResponse.Content.ReadAsStringAsync();
                 foreach (var hug in JsonNode.Parse(hugsInboxResponseJ)!.AsArray())
@@ -85,7 +87,7 @@ namespace PRODHugs_frontend
                         hug["receiver_display_name"]?.GetValue<string>() ?? hug["receiver_username"]?.GetValue<string>()));
                 }
                 // oh my god
-                var totalHugsResponse = await _client.SendAsync(await CreateHeadersGet(token, $"https://xn--80ahmbjkfgik8g.xn--p1ai/api/v1/users/{user.Id}/profile"));
+                var totalHugsResponse = await _client.SendAsync(CreateHeadersGet(token, $"https://xn--80ahmbjkfgik8g.xn--p1ai/api/v1/users/{user.Id}/profile"));
                 if (!totalHugsResponse.IsSuccessStatusCode) return null;
                 string totalHugsResponseJ = await totalHugsResponse.Content.ReadAsStringAsync();
                 JsonNode? totalHugsJ = JsonNode.Parse(totalHugsResponseJ);
@@ -114,8 +116,7 @@ namespace PRODHugs_frontend
                 return;
             }
             _loginForm.Hide();
-            _client.Dispose();
-            DashboardForm dashboard = new(user);
+            DashboardForm dashboard = new(user, _client);
             dashboard.Show();
             Close();
         }

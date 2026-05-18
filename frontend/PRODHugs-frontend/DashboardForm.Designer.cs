@@ -45,17 +45,17 @@
             label2 = new Label();
             label3 = new Label();
             panel2 = new Panel();
-            button1 = new Button();
+            DailyRewardButton = new Button();
             label4 = new Label();
             panel3 = new Panel();
-            label5 = new Label();
-            TotalHugsLabel = new Label();
-            label7 = new Label();
-            InitiatedHugsLabel = new Label();
-            label9 = new Label();
-            AcceptedHugsLabel = new Label();
-            label11 = new Label();
             RankLabel = new Label();
+            label11 = new Label();
+            AcceptedHugsLabel = new Label();
+            label9 = new Label();
+            InitiatedHugsLabel = new Label();
+            label7 = new Label();
+            TotalHugsLabel = new Label();
+            label5 = new Label();
             ((System.ComponentModel.ISupportInitialize)HugHistoryGrid).BeginInit();
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox4).BeginInit();
@@ -257,26 +257,27 @@
             // panel2
             // 
             panel2.BackColor = Color.FromArgb(0, 51, 36);
-            panel2.Controls.Add(button1);
+            panel2.Controls.Add(DailyRewardButton);
             panel2.Controls.Add(label3);
             panel2.Location = new Point(273, 338);
             panel2.Name = "panel2";
             panel2.Size = new Size(269, 100);
             panel2.TabIndex = 12;
             // 
-            // button1
+            // DailyRewardButton
             // 
-            button1.BackColor = Color.Yellow;
-            button1.BackgroundImageLayout = ImageLayout.None;
-            button1.FlatStyle = FlatStyle.Flat;
-            button1.Font = new Font("Segoe UI", 9F);
-            button1.ForeColor = Color.Black;
-            button1.Location = new Point(3, 52);
-            button1.Name = "button1";
-            button1.Size = new Size(263, 45);
-            button1.TabIndex = 0;
-            button1.Text = "Забрать";
-            button1.UseVisualStyleBackColor = false;
+            DailyRewardButton.BackColor = Color.Yellow;
+            DailyRewardButton.BackgroundImageLayout = ImageLayout.None;
+            DailyRewardButton.FlatStyle = FlatStyle.Flat;
+            DailyRewardButton.Font = new Font("Segoe UI", 9F);
+            DailyRewardButton.ForeColor = Color.Black;
+            DailyRewardButton.Location = new Point(3, 52);
+            DailyRewardButton.Name = "DailyRewardButton";
+            DailyRewardButton.Size = new Size(263, 45);
+            DailyRewardButton.TabIndex = 0;
+            DailyRewardButton.Text = "Забрать";
+            DailyRewardButton.UseVisualStyleBackColor = false;
+            DailyRewardButton.Click += DailyRewardButton_click;
             // 
             // label4
             // 
@@ -306,71 +307,16 @@
             panel3.Size = new Size(266, 244);
             panel3.TabIndex = 14;
             // 
-            // label5
+            // RankLabel
             // 
-            label5.AutoSize = true;
-            label5.Font = new Font("Segoe UI", 14F);
-            label5.ForeColor = Color.White;
-            label5.Location = new Point(15, 17);
-            label5.Name = "label5";
-            label5.Size = new Size(170, 25);
-            label5.TabIndex = 0;
-            label5.Text = "Всего обнимашек:";
-            // 
-            // TotalHugsLabel
-            // 
-            TotalHugsLabel.AutoSize = true;
-            TotalHugsLabel.Font = new Font("Segoe UI", 18F);
-            TotalHugsLabel.ForeColor = Color.Gold;
-            TotalHugsLabel.Location = new Point(15, 42);
-            TotalHugsLabel.Name = "TotalHugsLabel";
-            TotalHugsLabel.Size = new Size(27, 32);
-            TotalHugsLabel.TabIndex = 1;
-            TotalHugsLabel.Text = "0";
-            // 
-            // label7
-            // 
-            label7.AutoSize = true;
-            label7.Font = new Font("Segoe UI", 14F);
-            label7.ForeColor = Color.White;
-            label7.Location = new Point(15, 74);
-            label7.Name = "label7";
-            label7.Size = new Size(149, 25);
-            label7.TabIndex = 2;
-            label7.Text = "Инициировано:";
-            // 
-            // InitiatedHugsLabel
-            // 
-            InitiatedHugsLabel.AutoSize = true;
-            InitiatedHugsLabel.Font = new Font("Segoe UI", 18F);
-            InitiatedHugsLabel.ForeColor = Color.Gold;
-            InitiatedHugsLabel.Location = new Point(15, 99);
-            InitiatedHugsLabel.Name = "InitiatedHugsLabel";
-            InitiatedHugsLabel.Size = new Size(27, 32);
-            InitiatedHugsLabel.TabIndex = 3;
-            InitiatedHugsLabel.Text = "0";
-            // 
-            // label9
-            // 
-            label9.AutoSize = true;
-            label9.Font = new Font("Segoe UI", 14F);
-            label9.ForeColor = Color.White;
-            label9.Location = new Point(15, 131);
-            label9.Name = "label9";
-            label9.Size = new Size(92, 25);
-            label9.TabIndex = 4;
-            label9.Text = "Принято:";
-            // 
-            // AcceptedHugsLabel
-            // 
-            AcceptedHugsLabel.AutoSize = true;
-            AcceptedHugsLabel.Font = new Font("Segoe UI", 18F);
-            AcceptedHugsLabel.ForeColor = Color.Gold;
-            AcceptedHugsLabel.Location = new Point(15, 156);
-            AcceptedHugsLabel.Name = "AcceptedHugsLabel";
-            AcceptedHugsLabel.Size = new Size(27, 32);
-            AcceptedHugsLabel.TabIndex = 5;
-            AcceptedHugsLabel.Text = "0";
+            RankLabel.AutoSize = true;
+            RankLabel.Font = new Font("Segoe UI", 14F);
+            RankLabel.ForeColor = Color.Gold;
+            RankLabel.Location = new Point(66, 210);
+            RankLabel.Name = "RankLabel";
+            RankLabel.Size = new Size(136, 25);
+            RankLabel.TabIndex = 7;
+            RankLabel.Text = "Нетактильный";
             // 
             // label11
             // 
@@ -383,16 +329,71 @@
             label11.TabIndex = 6;
             label11.Text = "Ранг:";
             // 
-            // RankLabel
+            // AcceptedHugsLabel
             // 
-            RankLabel.AutoSize = true;
-            RankLabel.Font = new Font("Segoe UI", 14F);
-            RankLabel.ForeColor = Color.Gold;
-            RankLabel.Location = new Point(76, 210);
-            RankLabel.Name = "RankLabel";
-            RankLabel.Size = new Size(136, 25);
-            RankLabel.TabIndex = 7;
-            RankLabel.Text = "Нетактильный";
+            AcceptedHugsLabel.AutoSize = true;
+            AcceptedHugsLabel.Font = new Font("Segoe UI", 18F);
+            AcceptedHugsLabel.ForeColor = Color.Gold;
+            AcceptedHugsLabel.Location = new Point(15, 156);
+            AcceptedHugsLabel.Name = "AcceptedHugsLabel";
+            AcceptedHugsLabel.Size = new Size(27, 32);
+            AcceptedHugsLabel.TabIndex = 5;
+            AcceptedHugsLabel.Text = "0";
+            // 
+            // label9
+            // 
+            label9.AutoSize = true;
+            label9.Font = new Font("Segoe UI", 14F);
+            label9.ForeColor = Color.White;
+            label9.Location = new Point(15, 131);
+            label9.Name = "label9";
+            label9.Size = new Size(92, 25);
+            label9.TabIndex = 4;
+            label9.Text = "Принято:";
+            // 
+            // InitiatedHugsLabel
+            // 
+            InitiatedHugsLabel.AutoSize = true;
+            InitiatedHugsLabel.Font = new Font("Segoe UI", 18F);
+            InitiatedHugsLabel.ForeColor = Color.Gold;
+            InitiatedHugsLabel.Location = new Point(15, 99);
+            InitiatedHugsLabel.Name = "InitiatedHugsLabel";
+            InitiatedHugsLabel.Size = new Size(27, 32);
+            InitiatedHugsLabel.TabIndex = 3;
+            InitiatedHugsLabel.Text = "0";
+            // 
+            // label7
+            // 
+            label7.AutoSize = true;
+            label7.Font = new Font("Segoe UI", 14F);
+            label7.ForeColor = Color.White;
+            label7.Location = new Point(15, 74);
+            label7.Name = "label7";
+            label7.Size = new Size(149, 25);
+            label7.TabIndex = 2;
+            label7.Text = "Инициировано:";
+            // 
+            // TotalHugsLabel
+            // 
+            TotalHugsLabel.AutoSize = true;
+            TotalHugsLabel.Font = new Font("Segoe UI", 18F);
+            TotalHugsLabel.ForeColor = Color.Gold;
+            TotalHugsLabel.Location = new Point(15, 42);
+            TotalHugsLabel.Name = "TotalHugsLabel";
+            TotalHugsLabel.Size = new Size(27, 32);
+            TotalHugsLabel.TabIndex = 1;
+            TotalHugsLabel.Text = "0";
+            // 
+            // label5
+            // 
+            label5.AutoSize = true;
+            label5.Font = new Font("Segoe UI", 14F);
+            label5.ForeColor = Color.White;
+            label5.Location = new Point(15, 17);
+            label5.Name = "label5";
+            label5.Size = new Size(170, 25);
+            label5.TabIndex = 0;
+            label5.Text = "Всего обнимашек:";
             // 
             // DashboardForm
             // 
@@ -445,7 +446,7 @@
         private Label label2;
         private Label label3;
         private Panel panel2;
-        private Button button1;
+        private Button DailyRewardButton;
         private Label label4;
         private Panel panel3;
         private Label label5;
